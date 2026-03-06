@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mziyonke Driving School - Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-logo {
+      max-width: 150px;
+      margin-bottom: 20px;
+    }
+
+    .login-container h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 1.8em;
+    }
+
+    .login-container p {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .error-msg {
+      color: #dc3545;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      margin-top: 10px;
+    }
+
+    .role-admin { background: #dc3545; color: white; }
+    .role-manager { background: #28a745; color: white; }
+    .role-staff { background: #17a2b8; color: white; }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <img src="images/Mziyonke_logo.jpeg" alt="Logo" class="login-logo" onerror="this.style.display='none'">
+    <h1>Mziyonke Driving School</h1>
+    <p>Student Management System</p>
+
+    <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+      <div class="form-group">
+        <label>👤 Username</label>
+        <input type="text" id="username" required placeholder="Enter username">
+      </div>
+
+      <div class="form-group">
+        <label>🔒 Password</label>
+        <input type="password" id="password" required placeholder="Enter password">
+      </div>
+
+      <div class="form-group">
+        <label>🏢 Branch</label>
+        <select id="userBranch">
+          <option value="all">All Branches (Management)</option>
+          <option value="Gold Spot">Gold Spot</option>
+          <option value="Chris Hani">Chris Hani</option>
+          <option value="Bara">Bara</option>
+          <option value="Protea Glen">Protea Glen</option>
+          <option value="Dawn Park">Dawn Park</option>
+        </select>
+      </div>
+
+      <button type="submit" class="login-btn">Login</button>
+      <div class="error-msg" id="errorMsg">Invalid username or password</div>
+    </form>
+  </div>
+
+  <script>
+    // USER ACCOUNTS - In production, move this to server-side!
+    const USERS = {
+      'admin': { 
+        password: 'admin2024', 
+        role: 'admin', 
+        name: 'Administrator',
+        branch: 'all'
+      },
+      'manager': { 
+        password: 'manager2024', 
+        role: 'manager', 
+        name: 'General Manager',
+        branch: 'all'
+      },
+      'goldspot': { 
+        password: 'gold2024', 
+        role: 'staff', 
+        name: 'Gold Spot Staff',
+        branch: 'Gold Spot'
+      },
+      'chris': { 
+        password: 'chris2024', 
+        role: 'staff', 
+        name: 'Chris Hani Staff',
+        branch: 'Chris Hani'
+      },
+      'bara': { 
+        password: 'bara2024', 
+        role: 'staff', 
+        name: 'Bara Staff',
+        branch: 'Bara'
+      },
+      'protea': { 
+        password: 'protea2024', 
+        role: 'staff', 
+        name: 'Protea Staff',
+        branch: 'Protea Glen'
+      },
+      'dawn': { 
+        password: 'dawn2024', 
+        role: 'staff', 
+        name: 'Dawn Park Staff',
+        branch: 'Dawn Park'
+      }
+    };
+
+    function handleLogin() {
+      const username = document.getElementById('username').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      const selectedBranch = document.getElementById('userBranch').value;
+
+      const user = USERS[username];
+
+      if (user && user.password === password) {
+        // Store session
+        const session = {
+          username: username,
+          name: user.name,
+          role: user.role,
+          branch: user.role === 'admin' || user.role === 'manager' ? selectedBranch : user.branch,
+          loginTime: new Date().toISOString()
+        };
+
+        localStorage.setItem('mziyonkeSession', JSON.stringify(session));
+
+        // Redirect to main system
+        window.location.href = 'mziyonke_dashboard.html';
+      } else {
+        document.getElementById('errorMsg').style.display = 'block';
+      }
+    }
+
+    // Check if already logged in
+    const existingSession = localStorage.getItem('mziyonkeSession');
+    if (existingSession) {
+      const session = JSON.parse(existingSession);
+      const loginTime = new Date(session.loginTime);
+      const now = new Date();
+      const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
+
+      // Auto-login if session is less than 8 hours old
+      if (hoursSinceLogin < 8) {
+        window.location.href = 'mziyonke_dashboard.html';
+      } else {
+        localStorage.removeItem('mziyonkeSession');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# GitHub Pages Configuration
+title: Mziyonke Driving School
+description: Student Progress Tracking System
+baseurl: /mziyonke-driving-school
+url: https://[your-username].github.io
+
+# Build settings
+markdown: kramdown
+theme: minima
+
+# Exclude files
+exclude:
+  - README.md
+  - SETUP_INSTRUCTIONS.md

@@ -1,0 +1,3125 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mziyonke Driving School - Dashboard</title>
+
+  <!-- AUTHENTICATION CHECK - Must be first -->
+  <script>
+    // Check if user is logged in
+    const sessionData = localStorage.getItem('mziyonkeSession');
+    if (!sessionData) {
+      window.location.href = 'index.html';
+    } else {
+      const session = JSON.parse(sessionData);
+      const loginTime = new Date(session.loginTime);
+      const now = new Date();
+      const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
+
+      // Logout if session expired (8 hours)
+      if (hoursSinceLogin >= 8) {
+        localStorage.removeItem('mziyonkeSession');
+        window.location.href = 'index.html';
+      }
+
+      // Store current user globally
+      window.CURRENT_USER = session;
+    }
+  </script>
+
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mziyonke Driving School - Student Progress Tracker</title>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+
+    body{
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      min-height:100vh;
+      padding:20px;
+    }
+
+    .container{
+      max-width:1400px;
+      margin:0 auto;
+      background:#fff;
+      border-radius:20px;
+      box-shadow:0 20px 60px rgba(0,0,0,.3);
+      overflow:hidden;
+    }
+
+    .header{
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      color:#fff;
+      padding:30px;
+      text-align:center;
+    }
+
+    .logo-container{margin-bottom:20px}
+
+    .logo{
+      max-height:120px;
+      max-width:300px;
+      border-radius:10px;
+      box-shadow:0 4px 15px rgba(0,0,0,.3);
+      background:#fff;
+      padding:10px;
+    }
+
+    .header h1{
+      font-size:2.5em;
+      margin-bottom:10px;
+      text-shadow:2px 2px 4px rgba(0,0,0,.2);
+    }
+
+    .branch-selector{
+      margin-top:15px;
+      padding:10px;
+      background:rgba(255,255,255,.2);
+      border-radius:10px;
+      display:inline-block;
+    }
+
+    .branch-selector label{font-weight:bold;margin-right:10px}
+
+    .branch-selector select{
+      padding:8px 15px;
+      border-radius:5px;
+      border:none;
+      font-size:1em;
+      cursor:pointer;
+    }
+
+    .stage-legend{
+      display:flex;
+      justify-content:center;
+      gap:15px;
+      margin-top:20px;
+      flex-wrap:wrap;
+    }
+
+    .legend-item{
+      display:flex;
+      align-items:center;
+      gap:5px;
+      padding:8px 12px;
+      background:rgba(255,255,255,.15);
+      border-radius:20px;
+      font-size:.9em;
+    }
+
+    .legend-color{width:12px;height:12px;border-radius:50%}
+
+    .content{padding:30px}
+
+    /* --- TOP DISPLAY: Codes & Prices --- */
+    .pricing-wrap{
+      border:2px solid #3182ce;
+      border-radius:12px;
+      padding:14px;
+      margin-bottom:18px;
+      background:#f7fbff;
+    }
+
+    .pricing-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:14px;
+    }
+
+    .pricing-card{
+      background:#fff;
+      border-radius:12px;
+      padding:18px;
+      box-shadow:0 5px 15px rgba(0,0,0,.08);
+      text-align:center;
+    }
+
+    .pricing-title{
+      font-weight:700;
+      color:#4c51bf;
+      margin-bottom:10px;
+    }
+
+    .pricing-price{
+      font-size:2em;
+      font-weight:800;
+      color:#111827;
+      margin-bottom:10px;
+    }
+
+    .pricing-deposit{
+      color:#16a34a;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+
+    .pricing-balance{
+      color:#dc2626;
+      font-weight:700;
+    }
+
+    /* NUPAY INFO */
+    .nupay-info{
+      background:#e8f5e9;
+      border:2px solid #4caf50;
+      padding:15px;
+      border-radius:10px;
+      margin-bottom:20px;
+    }
+
+    .nupay-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:15px;
+    }
+
+    .nupay-card{
+      background:#fff;
+      padding:15px;
+      border-radius:8px;
+      text-align:center;
+      box-shadow:0 2px 5px rgba(0,0,0,.1);
+    }
+
+    .nupay-title{
+      color:#4caf50;
+      font-weight:700;
+      margin-bottom:10px;
+    }
+
+    .nupay-amount{
+      font-size:1.3em;
+      font-weight:bold;
+      color:#4caf50;
+    }
+
+    /* DASHBOARD STATS */
+    .dashboard{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+      gap:15px;
+      margin-bottom:30px;
+    }
+
+    .stat-card{
+      background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);
+      padding:20px;
+      border-radius:15px;
+      text-align:center;
+      box-shadow:0 5px 15px rgba(0,0,0,.1);
+      transition:transform .3s;
+    }
+
+    .stat-card:hover{transform:translateY(-5px)}
+
+    .stat-number{font-size:2em;font-weight:bold;color:#667eea}
+    .stat-label{margin-top:5px;color:#666;font-size:.9em}
+
+    /* FINANCIAL SUMMARY */
+    .financial-summary{
+      background:linear-gradient(135deg,#84fab0 0%,#8fd3f4 100%);
+      padding:25px;
+      border-radius:15px;
+      margin-bottom:30px;
+      box-shadow:0 5px 15px rgba(0,0,0,.1);
+    }
+
+    .financial-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:20px;
+    }
+
+    .financial-item{text-align:center}
+    .financial-amount{font-size:2em;font-weight:bold;color:#2c3e50}
+    .financial-label{color:#34495e;margin-top:5px}
+
+    .financial-card{
+      background:rgba(255,255,255,.15);
+      padding:20px;
+      border-radius:10px;
+      text-align:center;
+      backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.2);
+    }
+
+    .financial-card.highlight{
+      background:rgba(220,53,69,.3);
+      border:2px solid #dc3545;
+    }
+
+    .financial-card.warning{
+      background:rgba(255,193,7,.3);
+      border:2px solid #ffc107;
+    }
+
+    .financial-card.success{
+      background:rgba(40,167,69,.3);
+      border:2px solid #28a745;
+    }
+
+    /* INPUT SECTION */
+    .input-section{
+      background:#f8f9fa;
+      padding:25px;
+      border-radius:15px;
+      margin-bottom:30px;
+      border-left:5px solid #667eea;
+    }
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:15px;
+      margin-bottom:20px;
+    }
+
+    .form-group{display:flex;flex-direction:column}
+    .form-group label{
+      font-weight:600;
+      color:#555;
+      margin-bottom:8px;
+      font-size:.9em;
+      text-transform:uppercase;
+      letter-spacing:.5px;
+    }
+    .form-group input,.form-group select,.form-group textarea{
+      padding:12px;
+      border:2px solid #e0e0e0;
+      border-radius:8px;
+      font-size:1em;
+      transition:all .3s;
+    }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{
+      outline:none;
+      border-color:#667eea;
+      box-shadow:0 0 0 3px rgba(102,126,234,.1);
+    }
+
+    .primary-key input{
+      border:2px solid #dc3545;
+      background:#fff5f5;
+    }
+    .primary-key-label{
+      color:#dc3545 !important;
+      font-weight:bold !important;
+    }
+
+    .duplicate-warning{
+      background:#f8d7da;
+      color:#721c24;
+      padding:10px;
+      border-radius:5px;
+      margin-top:5px;
+      font-size:.9em;
+      display:none;
+      border-left:4px solid #dc3545;
+    }
+    .duplicate-warning.show{display:block;animation:shake .5s}
+
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-5px)}
+      75%{transform:translateX(5px)}
+    }
+
+    .check-icon{
+      color:#28a745;
+      margin-left:8px;
+      display:none;
+    }
+    .check-icon.show{display:inline}
+
+    /* PAYMENT METHOD BOXES */
+    .payment-method-box{
+      background:#e3f2fd;
+      border:2px solid #2196f3;
+      padding:15px;
+      border-radius:10px;
+      margin-bottom:15px;
+      display:none;
+    }
+
+    .stage-selector{
+      background:#fff3cd;
+      border:2px solid #ffc107;
+      padding:20px;
+      border-radius:10px;
+      margin-bottom:20px;
+    }
+
+    .button-group{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      padding:12px 24px;
+      border:none;
+      border-radius:8px;
+      font-size:1em;
+      font-weight:600;
+      cursor:pointer;
+      transition:all .3s;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+    }
+
+    .btn-primary{background:#667eea;color:#fff}
+    .btn-primary:hover:not(:disabled){background:#5a67d8;transform:translateY(-2px);box-shadow:0 5px 20px rgba(102,126,234,.4)}
+    .btn-success{background:#48bb78;color:#fff}
+    .btn-success:hover{background:#38a169;transform:translateY(-2px)}
+    .btn-danger{background:#f56565;color:#fff}
+    .btn-delete{background:#dc3545;color:#fff;font-size:.8em;padding:6px 12px;cursor:pointer;position:relative;z-index:10}
+    .btn-delete:hover{background:#c82333;transform:translateY(-2px)}
+    .btn-danger:hover{background:#e53e3e;transform:translateY(-2px)}
+    .btn-warning{background:#ed8936;color:#fff}
+    .btn-warning:hover{background:#dd6b20;transform:translateY(-2px)}
+    .btn-info{background:#4299e1;color:#fff}
+    .btn-info:hover{background:#3182ce;transform:translateY(-2px)}
+    .btn-orange{background:#fd7e14;color:#fff}
+    .btn-orange:hover{background:#e56b0a;transform:translateY(-2px)}
+    .btn-purple{background:#6f42c1;color:#fff}
+    .btn-purple:hover{background:#5a32a3;transform:translateY(-2px)}
+    .btn-nupay{background:#4caf50;color:#fff}
+    .btn-yoco{background:#ff6b35;color:#fff}
+    .btn-whatsapp{background:#25d366;color:#fff;font-size:.8em;padding:6px 12px}
+    .btn-whatsapp:hover{background:#128c7e;transform:translateY(-2px)}
+    .btn-edit{background:#17a2b8;color:#fff}
+    .btn-refresh{background:#6c757d;color:#fff}
+    .btn-refresh:hover{background:#5a6268;transform:translateY(-2px)}
+
+    /* REFRESH BUTTON ANIMATION */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .refreshing {
+      animation: spin 1s linear infinite;
+      will-change: transform;
+    }
+
+    /* FILTERS */
+    .filters-section{
+      display:flex;
+      gap:15px;
+      margin-bottom:20px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .search-box{flex:1;min-width:250px}
+    .search-box input{
+      width:100%;
+      padding:12px 40px 12px 15px;
+      border:2px solid #e0e0e0;
+      border-radius:25px;
+      font-size:1em;
+    }
+
+    .filter-buttons{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .filter-btn{
+      padding:8px 16px;
+      border:2px solid #dee2e6;
+      background:#fff;
+      border-radius:20px;
+      cursor:pointer;
+      font-size:.9em;
+      transition:all .3s;
+    }
+    .filter-btn.active{
+      background:#667eea;
+      color:#fff;
+      border-color:#667eea;
+    }
+
+    .branch-filters{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+      padding:15px;
+      background:#f8f9fa;
+      border-radius:10px;
+      align-items:center;
+    }
+
+    .branch-filter-btn{
+      padding:8px 16px;
+      border:2px solid #667eea;
+      background:#fff;
+      color:#667eea;
+      border-radius:20px;
+      cursor:pointer;
+      font-size:.9em;
+      transition:all .3s;
+    }
+    .branch-filter-btn.active{
+      background:#667eea;
+      color:#fff;
+    }
+
+    /* EDUCATOR VIEW FILTERS */
+    .educator-filters{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+      padding:15px;
+      background:#e8f5e9;
+      border-radius:10px;
+      border:2px solid #4caf50;
+      align-items:center;
+    }
+
+    .educator-filter-label{
+      font-weight:bold;
+      color:#4caf50;
+      margin-right:10px;
+    }
+
+    .educator-filter-btn{
+      padding:8px 16px;
+      border:2px solid #4caf50;
+      background:#fff;
+      color:#4caf50;
+      border-radius:20px;
+      cursor:pointer;
+      font-size:.9em;
+      transition:all .3s;
+    }
+    .educator-filter-btn.active{
+      background:#4caf50;
+      color:#fff;
+    }
+
+    /* TABLE */
+    .table-container{
+      overflow-x:auto;
+      border-radius:10px;
+      box-shadow:0 2px 10px rgba(0,0,0,.1);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+    }
+
+    thead{
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      color:#fff;
+    }
+
+    th{
+      padding:15px;
+      text-align:left;
+      font-weight:600;
+      text-transform:uppercase;
+      font-size:.85em;
+      letter-spacing:.5px;
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
+
+    td{
+      padding:15px;
+      border-bottom:1px solid #eee;
+    }
+
+    tr:hover{background:#f8f9fa}
+
+    .stage-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 12px;
+      border-radius:20px;
+      font-size:.85em;
+      font-weight:600;
+      color:#fff;
+      white-space:nowrap;
+    }
+
+    .stage-1{background:#6c757d}
+    .stage-2{background:#ffc107;color:#000}
+    .stage-3{background:#17a2b8}
+    .stage-4{background:#fd7e14}
+    .stage-5{background:#28a745}
+    .stage-6{background:#6f42c1}
+
+    .sales-rep-tag{
+      display:inline-block;
+      padding:3px 8px;
+      background:#6f42c1;
+      color:#fff;
+      border-radius:10px;
+      font-size:.75em;
+      font-weight:600;
+    }
+
+    .payment-badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:12px;
+      font-size:.8em;
+      font-weight:600;
+    }
+
+    .payment-complete{background:#d4edda;color:#155724}
+    .payment-partial{background:#fff3cd;color:#856404}
+    .payment-unpaid{background:#f8d7da;color:#721c24}
+
+    .payment-method-tag{
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:10px;
+      font-size:.75em;
+      font-weight:600;
+      margin-left:5px;
+    }
+
+    .method-cash{background:#28a745;color:#fff}
+    .method-eft{background:#17a2b8;color:#fff}
+    .method-nupay{background:#4caf50;color:#fff}
+    .method-yoco{background:#ff6b35;color:#fff}
+    .method-card{background:#6c757d;color:#fff}
+
+    .test-result-passed{
+      background:#d4edda;
+      color:#155724;
+      padding:4px 10px;
+      border-radius:12px;
+      font-size:.8em;
+      font-weight:600;
+    }
+
+    .test-result-failed{
+      background:#f8d7da;
+      color:#721c24;
+      padding:4px 10px;
+      border-radius:12px;
+      font-size:.8em;
+      font-weight:600;
+    }
+
+    .test-result-pending{
+      background:#fff3cd;
+      color:#856404;
+      padding:4px 10px;
+      border-radius:12px;
+      font-size:.8em;
+      font-weight:600;
+    }
+
+    .action-buttons{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .action-btn{
+      padding:6px 12px;
+      font-size:.85em;
+      border-radius:5px;
+    }
+
+    /* MODALS */
+    .modal{
+      display:none;
+      position:fixed;
+      z-index:1000;
+      left:0;top:0;
+      width:100%;height:100%;
+      background:rgba(0,0,0,.5);
+      justify-content:center;
+      align-items:center;
+    }
+
+    .modal-content{
+      background:#fff;
+      padding:30px;
+      border-radius:15px;
+      width:90%;
+      max-width:700px;
+      max-height:85vh;
+      overflow-y:auto;
+      animation:slideIn .3s;
+    }
+
+    .modal-content.wide{max-width:900px}
+
+    @keyframes slideIn{
+      from{transform:translateY(-50px);opacity:0}
+      to{transform:translateY(0);opacity:1}
+    }
+
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+      padding-bottom:15px;
+      border-bottom:2px solid #eee;
+    }
+
+    .close{
+      font-size:1.5em;
+      cursor:pointer;
+      color:#999;
+    }
+    .close:hover{color:#333}
+
+    /* STAGE TIMELINE */
+    .stage-timeline{
+      display:flex;
+      flex-direction:column;
+      gap:15px;
+      margin:20px 0;
+    }
+
+    .timeline-item{
+      display:flex;
+      align-items:center;
+      gap:15px;
+      padding:15px;
+      background:#f8f9fa;
+      border-radius:10px;
+      border-left:4px solid #dee2e6;
+    }
+
+    .timeline-item.completed{
+      border-left-color:#28a745;
+      background:#d4edda;
+    }
+
+    .timeline-item.current{
+      border-left-color:#ffc107;
+      background:#fff3cd;
+      font-weight:600;
+    }
+
+    .timeline-item.failed{
+      border-left-color:#dc3545;
+      background:#f8d7da;
+    }
+
+    .timeline-item.pending{
+      border-left-color:#ffc107;
+      background:#fff3cd;
+    }
+
+    .timeline-number{
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:bold;
+      color:#fff;
+      font-size:.9em;
+    }
+
+    /* EDIT FORM */
+    .edit-form-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:15px;
+      margin-bottom:15px;
+    }
+
+    .edit-form-group{
+      display:flex;
+      flex-direction:column;
+    }
+
+    .edit-form-group label{
+      font-weight:600;
+      color:#555;
+      margin-bottom:5px;
+      font-size:.85em;
+    }
+
+    .edit-form-group input,
+    .edit-form-group select{
+      padding:8px;
+      border:2px solid #e0e0e0;
+      border-radius:5px;
+      font-size:.9em;
+    }
+
+    /* PAYMENT HISTORY */
+    .payment-history{
+      background:#f5f5f5;
+      padding:15px;
+      border-radius:8px;
+      margin-top:10px;
+      max-height:150px;
+      overflow-y:auto;
+    }
+
+    .payment-record{
+      display:flex;
+      justify-content:space-between;
+      padding:8px;
+      background:#fff;
+      margin-bottom:5px;
+      border-radius:5px;
+      font-size:.9em;
+    }
+
+    /* DATA STATUS INDICATOR */
+    .data-status{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 16px;
+      background:#e8f5e9;
+      border-radius:20px;
+      font-size:.9em;
+      color:#28a745;
+      font-weight:600;
+    }
+    .data-status.empty{
+      background:#f8d7da;
+      color:#dc3545;
+    }
+
+    .hidden{display:none !important}
+
+    @media print{
+      body{background:#fff}
+      .no-print{display:none !important}
+      .container{box-shadow:none}
+    }
+      .btn-sync:hover { background:#138496; }
+    .btn-logout:hover { background:#c82333; }
+    .role-admin { background:#dc3545; }
+    .role-manager { background:#28a745; }
+    .role-staff { background:#17a2b8; }
+</style>
+
+  <!-- SheetJS for real .xlsx export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo-container">
+        <img class="logo" src="" alt="Logo" style="display:none;" alt="Mziyonke Driving School Logo" onerror="this.style.display='none'"/>
+      </div>
+  <!-- USER INFO BAR -->
+  <div style="background:#2c3e50;color:white;padding:10px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;align-items:center;gap:15px;">
+      <span>👤 <strong id="userName">Loading...</strong></span>
+      <span id="userRole" class="role-badge" style="padding:3px 10px;border-radius:12px;font-size:0.8em;">Role</span>
+      <span id="userBranch">Branch</span>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="syncData()" class="btn-sync" style="background:#17a2b8;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;">🔄 Sync Data</button>
+      <button onclick="logout()" class="btn-logout" style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;">🚪 Logout</button>
+    </div>
+  </div>
+
+
+      <h1>Student Progress Tracker</h1>
+      <p>Manage your driving school students through all 6 stages</p>
+
+      <div class="branch-selector no-print">
+        <label>Select Branch:</label>
+        <select id="currentBranch" onchange="changeBranch()">
+          <option value="all">All Branches</option>
+          <option value="Gold Spot">Gold Spot (Main)</option>
+          <option value="Chris Hani">Chris Hani</option>
+          <option value="Bara">Bara</option>
+          <option value="Protea Glen">Protea Glen</option>
+          <option value="Dawn Park">Dawn Park</option>
+        </select>
+      </div>
+
+      <div class="stage-legend">
+        <div class="legend-item"><div class="legend-color" style="background:#6c757d"></div><span>Stage 1: Captured</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#ffc107"></div><span>Stage 2: Deposit Paid</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#17a2b8"></div><span>Stage 3: With Educator</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#fd7e14"></div><span>Stage 4: Ready for Booking</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#28a745"></div><span>Stage 5: Booked for Test</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#6f42c1"></div><span>Stage 6: Test Results</span></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- PRICING INFO -->
+      <div class="pricing-wrap">
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <div class="pricing-title">🚛 Code 14</div>
+            <div class="pricing-price">R4,500</div>
+            <div class="pricing-deposit">Deposit: R3,000</div>
+            <div class="pricing-balance">Balance: R1,500</div>
+          </div>
+          <div class="pricing-card">
+            <div class="pricing-title">🚗 Code 10</div>
+            <div class="pricing-price">R2,000</div>
+            <div class="pricing-deposit">Deposit: R1,500</div>
+            <div class="pricing-balance">Balance: R500</div>
+          </div>
+          <div class="pricing-card">
+            <div class="pricing-title">🚙 Code 8</div>
+            <div class="pricing-price">R2,000</div>
+            <div class="pricing-deposit">Deposit: R1,500</div>
+            <div class="pricing-balance">Balance: R500</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NUPAY INFO -->
+      <div class="nupay-info no-print">
+        <h3 style="color:#4caf50;margin-bottom:15px;">💳 Nupay Monthly Debit Options</h3>
+        <div class="nupay-grid">
+          <div class="nupay-card">
+            <div class="nupay-title">Code 10 / Code 8</div>
+            <div class="nupay-amount">R250/month</div>
+            <small>Until full amount reached</small>
+          </div>
+          <div class="nupay-card">
+            <div class="nupay-title">Code 14</div>
+            <div class="nupay-amount">R350/month</div>
+            <small>Until full amount reached</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- REFRESH & DATA STATUS BAR -->
+      <div class="no-print" style="background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
+        <div style="display:flex;align-items:center;gap:15px;">
+          <button class="btn-refresh" id="refreshBtn" onclick="refreshAllData()" title="Reload all data from storage">
+            🔄 Refresh Data
+          </button>
+          <div id="dataStatus" class="data-status empty">
+            <span id="dataStatusIcon">⚠️</span>
+            <span id="dataStatusText">No data loaded</span>
+          </div>
+        </div>
+        <div style="font-size:.85em;color:#666;">
+          Last refreshed: <span id="lastRefreshTime">Never</span>
+        </div>
+      </div>
+
+      <!-- FINANCIAL SUMMARY -->
+      <div class="financial-summary no-print">
+        <h2 style="text-align:center;margin-bottom:20px;">💰 Financial Summary</h2>
+        <div class="financial-grid" style="grid-template-columns: repeat(2, 1fr); max-width: 600px; margin: 0 auto;">
+          <div class="financial-card highlight">
+            <div class="financial-amount" id="totalOutstanding">R0</div>
+            <div class="financial-label">Total Outstanding</div>
+          </div>
+          <div class="financial-card warning">
+            <div class="financial-amount" id="outstandingCount">0</div>
+            <div class="financial-label">Students with Balance</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:15px;">
+          <button class="btn-success" onclick="viewOutstandingReport()" style="font-size:.9em;">📊 View Detailed Outstanding Report</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD STATS -->
+      <div class="dashboard">
+        <div class="stat-card">
+          <div class="stat-number" id="totalCount">0</div>
+          <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card" style="background:#fff3cd;color:#856404;">
+          <div class="stat-number" id="capturedCount">0</div>
+          <div class="stat-label">Captured</div>
+        </div>
+        <div class="stat-card" style="background:#d1ecf1;color:#0c5460;">
+          <div class="stat-number" id="paymentCount">0</div>
+          <div class="stat-label">Deposit Paid</div>
+        </div>
+        <div class="stat-card" style="background:#d4edda;color:#155724;">
+          <div class="stat-number" id="educatorCount">0</div>
+          <div class="stat-label">With Educator</div>
+        </div>
+        <div class="stat-card" style="background:#ffe5d9;color:#fd7e14;">
+          <div class="stat-number" id="readyCount">0</div>
+          <div class="stat-label">Ready to Book</div>
+        </div>
+        <div class="stat-card" style="background:#d4edda;color:#155724;">
+          <div class="stat-number" id="bookedCount">0</div>
+          <div class="stat-label">Booked</div>
+        </div>
+        <div class="stat-card" style="background:#e2d4f0;color:#6f42c1;">
+          <div class="stat-number" id="resultsCount">0</div>
+          <div class="stat-label">Test Results</div>
+        </div>
+      </div>
+
+      <!-- INPUT SECTION -->
+      <div class="input-section no-print" id="captureSection">
+        <h2 style="margin-bottom:20px;color:#333;">📝 Capture New Student</h2>
+
+        <form id="studentForm" onsubmit="event.preventDefault(); addStudent();">
+          <div class="form-grid">
+            <!-- ID NUMBER -->
+            <div class="form-group primary-key">
+              <label class="primary-key-label">ID Number (Primary Key) * 🔑</label>
+              <div style="position:relative;">
+                <input type="text" id="idNumber" required placeholder="0000000000000" maxlength="13" inputmode="numeric" pattern="[0-9]*" oninput="validateIdNumber()" onblur="checkDuplicateId()">
+                <span class="check-icon" id="idCheckIcon">✓ Unique</span>
+              </div>
+              <div class="duplicate-warning" id="duplicateWarning">⚠️ This ID number already exists!</div>
+            </div>
+
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" id="firstName" required placeholder="John">
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" id="lastName" required placeholder="Doe">
+            </div>
+            <div class="form-group">
+              <label>Phone *</label>
+              <input type="tel" id="phone" required placeholder="+27 123 456 789">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="email" placeholder="john@example.com">
+            </div>
+
+            <!-- SALES REP NAME -->
+            <div class="form-group">
+              <label>Sales Rep Name *</label>
+              <input type="text" id="salesRep" required placeholder="e.g., John Smith">
+            </div>
+
+            <div class="form-group">
+              <label>Branch *</label>
+              <select id="branch" required>
+                <option value="">Select Branch...</option>
+                <option value="Gold Spot">Gold Spot (Main)</option>
+                <option value="Chris Hani">Chris Hani</option>
+                <option value="Bara">Bara</option>
+                <option value="Protea Glen">Protea Glen</option>
+              <option value="Dawn Park">Dawn Park</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>License Code *</label>
+              <select id="licenseCode" required onchange="updatePricing()">
+                <option value="">Select Code...</option>
+                <option value="Code 8">Code 8 - R2,000</option>
+                <option value="Code 10">Code 10 - R2,000</option>
+                <option value="Code 14">Code 14 - R4,500</option>
+              </select>
+            </div>
+
+            <!-- PAYMENT METHOD - 4 OPTIONS -->
+            <div class="form-group">
+              <label>Payment Method *</label>
+              <select id="paymentMethod" required onchange="updatePaymentMethod()">
+                <option value="">Select Method...</option>
+                <option value="Cash">💵 Cash</option>
+                <option value="EFT">🏦 EFT</option>
+                <option value="Yoco">💳 Yoco (Card)</option>
+                <option value="Nupay">🔄 Nupay (Monthly Debit)</option>
+              </select>
+            </div>
+
+            <!-- PAYMENT DATE -->
+            <div class="form-group">
+              <label>Payment Date * 📅</label>
+              <input type="date" id="paymentDate" required>
+              <small style="color:#666;margin-top:5px;">Date when payment was received</small>
+            </div>
+
+            <div class="form-group">
+              <label>Total Fee</label>
+              <input type="text" id="totalFee" readonly style="background:#e9ecef;font-weight:bold;">
+            </div>
+
+            <div class="form-group">
+              <label>Amount Paid *</label>
+              <input type="number" id="amountPaid" required placeholder="0.00" step="0.01" oninput="checkPayment()">
+              <small style="color:#666;" id="paymentHint">Enter deposit or first payment</small>
+            </div>
+
+            <div class="form-group">
+              <label>Balance Remaining</label>
+              <input type="text" id="balanceRemaining" readonly style="background:#e9ecef;color:#dc3545;font-weight:bold;">
+            </div>
+
+            <div class="form-group">
+              <label>Payment Reference</label>
+              <input type="text" id="paymentRef" placeholder="REF123456, Yoco Ref, or Nupay Contract">
+            </div>
+          </div>
+
+          <!-- NUPAY DETAILS -->
+          <div id="nupayDetails" class="payment-method-box">
+            <h4 style="color:#4caf50;margin-bottom:10px;">🔄 Nupay Debit Order Details</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Monthly Debit Amount</label>
+                <input type="text" id="monthlyDebit" readonly style="background:#e8f5e9;color:#4caf50;font-weight:bold;">
+              </div>
+              <div class="form-group">
+                <label>Number of Months</label>
+                <input type="number" id="nupayMonths" placeholder="Auto-calculated" readonly style="background:#e9ecef;">
+              </div>
+              <div class="form-group">
+                <label>Bank Name</label>
+                <input type="text" id="bankName" placeholder="e.g., FNB, ABSA">
+              </div>
+              <div class="form-group">
+                <label>Account Number</label>
+                <input type="text" id="accountNumber" placeholder="Bank account number">
+              </div>
+            </div>
+          </div>
+
+          <!-- YOCO DETAILS -->
+          <div id="yocoDetails" class="payment-method-box" style="border-color:#ff6b35;background:#fff3e0;">
+            <h4 style="color:#ff6b35;margin-bottom:10px;">💳 Yoco Card Payment Details</h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Yoco Transaction ID</label>
+                <input type="text" id="yocoTransId" placeholder="Yoco transaction reference">
+              </div>
+              <div class="form-group">
+                <label>Card Type</label>
+                <select id="yocoCardType">
+                  <option value="">Select Card...</option>
+                  <option value="Visa">Visa</option>
+                  <option value="Mastercard">Mastercard</option>
+                  <option value="Debit">Debit Card</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage-selector">
+            <label style="font-weight:bold;color:#333;display:block;margin-bottom:10px;">Initial Stage:</label>
+            <select id="initialStage" style="width:100%;padding:10px;border-radius:5px;border:2px solid #ffc107;">
+              <option value="1">1. Captured (Just registered)</option>
+              <option value="2" id="depositPaidOption">2. Deposit Paid (Can start classes)</option>
+            </select>
+            <div id="depositWarning" style="color:#dc3545;margin-top:10px;display:none;">
+              ⚠️ Insufficient payment! Student cannot start classes yet.
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:15px;">
+            <label>Notes</label>
+            <textarea id="notes" placeholder="Any additional information..." style="min-height:80px;"></textarea>
+          </div>
+
+          <div class="button-group" style="margin-top:20px;">
+            <button type="submit" class="btn-primary" id="saveBtn">💾 Capture Student</button>
+            <button type="button" class="btn-warning" onclick="clearForm()">🔄 Clear</button>
+            <button type="button" class="btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- SEARCH & FILTERS -->
+      <div class="filters-section no-print" style="flex-wrap:wrap;gap:10px;">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search by name, ID, phone, branch, or sales rep..." oninput="searchStudents()">
+        </div>
+        <button class="btn-success" onclick="exportToExcel()">📊 Export to Excel</button>
+        <button class="btn-info" onclick="connectSaveFolder()">📁 Connect Folder</button>
+      </div>
+
+      <!-- BRANCH FILTERS -->
+      <div class="branch-filters no-print">
+        <span style="font-weight:bold;color:#555;margin-right:10px;">Filter by Branch:</span>
+        <div class="branch-filter-btn active" onclick="filterByBranch('all', this)">All Branches</div>
+        <div class="branch-filter-btn" onclick="filterByBranch('Gold Spot', this)">Gold Spot</div>
+        <div class="branch-filter-btn" onclick="filterByBranch('Chris Hani', this)">Chris Hani</div>
+        <div class="branch-filter-btn" onclick="filterByBranch('Bara', this)">Bara</div>
+        <div class="branch-filter-btn" onclick="filterByBranch('Protea Glen', this)">Protea Glen</div>
+        <div class=\"branch-filter-btn\" onclick="filterByBranch('Dawn Park', this)">Dawn Park</div>
+      </div>
+
+      <!-- STAGE FILTERS -->
+      <div class="filter-buttons no-print">
+        <button class="filter-btn active" onclick="filterByStage('all')">All Students</button>
+        <button class="filter-btn" onclick="filterByStage('1')" style="background:#6c757d;color:#fff;">Captured</button>
+        <button class="filter-btn" onclick="filterByStage('2')" style="background:#ffc107;color:#000;">Deposit Paid</button>
+        <button class="filter-btn" onclick="filterByStage('3')" style="background:#17a2b8;color:#fff;">With Educator</button>
+        <button class="filter-btn" onclick="filterByStage('4')" style="background:#fd7e14;color:#fff;">Ready for Booking</button>
+        <button class="filter-btn" onclick="filterByStage('5')" style="background:#28a745;color:#fff;">Booked</button>
+        <button class="filter-btn" onclick="filterByStage('6')" style="background:#6f42c1;color:#fff;">Test Results</button>
+      </div>
+
+      <!-- EDUCATOR VIEW FILTERS -->
+      <div class="educator-filters no-print">
+        <span class="educator-filter-label">👨‍🏫 Educator View:</span>
+        <div class="educator-filter-btn" onclick="filterByEducatorStatus('active', this)">Active Students</div>
+        <div class="educator-filter-btn" onclick="filterByEducatorStatus('completed', this)">Completed (Passed)</div>
+        <div class="educator-filter-btn" onclick="filterByEducatorStatus('failed', this)">Failed/Re-testing</div>
+      </div>
+
+      <!-- STUDENTS TABLE -->
+      <div class="table-container">
+        <table id="studentsTable">
+          <thead>
+            <tr>
+              <th>ID Number</th>
+              <th>Student</th>
+              <th>Branch/Educator</th>
+              <th>Code</th>
+              <th>Payment Info</th>
+              <th>Stage</th>
+              <th>Test Result</th>
+              <th>Sales Rep</th>
+              <th>Date Added</th>
+              <th class="no-print">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STUDENT DETAILS MODAL -->
+  <div id="detailModal" class="modal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Student Progress Details</h2>
+        <span class="close" onclick="closeModal()">&times;</span>
+      </div>
+      <div id="modalBody"></div>
+      <div class="no-print" style="margin-top:20px;padding-top:20px;border-top:2px solid #eee;">
+        <h3 style="margin-bottom:15px;">Update Progress</h3>
+        <div id="stageActions" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT STUDENT MODAL -->
+  <div id="editModal" class="modal" onclick="closeEditModal(event)">
+    <div class="modal-content wide" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>✏️ Edit Student Details</h2>
+        <span class="close" onclick="closeEditModal()">&times;</span>
+      </div>
+      <form id="editForm" onsubmit="event.preventDefault(); saveEdit();">
+        <input type="hidden" id="editStudentId">
+        
+        <h3 style="margin-bottom:15px;color:#667eea;">Personal Information</h3>
+        <div class="edit-form-grid">
+          <div class="edit-form-group">
+            <label>First Name *</label>
+            <input type="text" id="editFirstName" required>
+          </div>
+          <div class="edit-form-group">
+            <label>Last Name *</label>
+            <input type="text" id="editLastName" required>
+          </div>
+          <div class="edit-form-group">
+            <label>ID Number</label>
+            <input type="text" id="editIdNumber" readonly style="background:#e9ecef;">
+          </div>
+          <div class="edit-form-group">
+            <label>Phone *</label>
+            <input type="tel" id="editPhone" required>
+          </div>
+          <div class="edit-form-group">
+            <label>Email</label>
+            <input type="email" id="editEmail">
+          </div>
+          <div class="edit-form-group">
+            <label>Sales Rep *</label>
+            <input type="text" id="editSalesRep" required>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom:15px;color:#667eea;margin-top:20px;">Course Information</h3>
+        <div class="edit-form-grid">
+          <div class="edit-form-group">
+            <label>Branch *</label>
+            <select id="editBranch" required onchange="updateEditEducator()">
+              <option value="Gold Spot">Gold Spot (Main)</option>
+              <option value="Chris Hani">Chris Hani</option>
+              <option value="Bara">Bara</option>
+              <option value="Protea Glen">Protea Glen</option>
+              <option value="Dawn Park">Dawn Park</option>
+            </select>
+          </div>
+          <div class="edit-form-group">
+            <label>License Code *</label>
+            <select id="editLicenseCode" required onchange="updateEditPricing()">
+              <option value="Code 8">Code 8 - R2,000</option>
+              <option value="Code 10">Code 10 - R2,000</option>
+              <option value="Code 14">Code 14 - R4,500</option>
+            </select>
+          </div>
+          <div class="edit-form-group">
+            <label>Current Stage</label>
+            <input type="text" id="editCurrentStage" readonly style="background:#e9ecef;">
+          </div>
+          <div class="edit-form-group">
+            <label>Educator</label>
+            <input type="text" id="editEducator" readonly style="background:#e9ecef;">
+          </div>
+        </div>
+
+        <h3 style="margin-bottom:15px;color:#667eea;margin-top:20px;">Payment Information</h3>
+        <div class="edit-form-grid">
+          <div class="edit-form-group">
+            <label>Total Fee</label>
+            <input type="number" id="editTotalFee" readonly style="background:#e9ecef;">
+          </div>
+          <div class="edit-form-group">
+            <label>Amount Paid</label>
+            <input type="number" id="editAmountPaid" step="0.01" oninput="updateEditBalance()">
+          </div>
+          <div class="edit-form-group">
+            <label>Balance</label>
+            <input type="number" id="editBalance" readonly style="background:#e9ecef;color:#dc3545;">
+          </div>
+          <div class="edit-form-group">
+            <label>Payment Method</label>
+            <select id="editPaymentMethod">
+              <option value="Cash">Cash</option>
+              <option value="EFT">EFT</option>
+              <option value="Yoco">Yoco</option>
+              <option value="Nupay">Nupay</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="button-group" style="margin-top:25px;justify-content:center;">
+          <button type="submit" class="btn-success">💾 Save Changes</button>
+          <button type="button" class="btn-secondary" onclick="closeEditModal()" style="background:#6c757d;color:#fff;">❌ Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TEST RESULTS MODAL -->
+  <div id="testResultModal" class="modal" onclick="closeTestResultModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📝 Record Test Results</h2>
+        <span class="close" onclick="closeTestResultModal()">&times;</span>
+      </div>
+      <div id="testResultBody">
+        <input type="hidden" id="testStudentId">
+        
+        <div style="background:#f8f9fa;padding:20px;border-radius:10px;margin-bottom:20px;">
+          <h3 id="testStudentName" style="margin-bottom:10px;"></h3>
+          <p id="testStudentDetails" style="color:#666;font-size:.9em;"></p>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="font-weight:bold;margin-bottom:10px;display:block;">Test Result *</label>
+          <div style="display:flex;gap:15px;flex-wrap:wrap;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:15px;background:#d4edda;border-radius:8px;border:2px solid #28a745;">
+              <input type="radio" name="testResult" value="passed" style="width:20px;height:20px;">
+              <span style="font-weight:600;color:#155724;">✅ PASSED</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:15px;background:#f8d7da;border-radius:8px;border:2px solid #dc3545;">
+              <input type="radio" name="testResult" value="failed" style="width:20px;height:20px;">
+              <span style="font-weight:600;color:#721c24;">❌ FAILED</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:15px;background:#fff3cd;border-radius:8px;border:2px solid #ffc107;">
+              <input type="radio" name="testResult" value="pending" style="width:20px;height:20px;">
+              <span style="font-weight:600;color:#856404;">⏳ PENDING</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="font-weight:bold;margin-bottom:8px;display:block;">Test Date *</label>
+          <input type="date" id="testDate" required style="padding:10px;border:2px solid #e0e0e0;border-radius:5px;width:100%;">
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="font-weight:bold;margin-bottom:8px;display:block;">Notes / Reason (Required for Failed/Pending)</label>
+          <textarea id="testNotes" placeholder="Enter details: failure reasons, pending reasons, next steps, etc..." style="padding:10px;border:2px solid #e0e0e0;border-radius:5px;width:100%;min-height:100px;"></textarea>
+        </div>
+
+        <div id="testResultInfo" style="background:#e3f2fd;padding:15px;border-radius:8px;margin-bottom:20px;display:none;">
+          <strong>ℹ️ What happens next:</strong>
+          <ul style="margin-top:10px;margin-left:20px;line-height:1.6;">
+            <li id="passedInfo" style="display:none;"><strong>Passed:</strong> Student will be marked as completed and removed from educator's active list.</li>
+            <li id="failedInfo" style="display:none;"><strong>Failed:</strong> Student stays with educator for re-training and re-booking.</li>
+            <li id="pendingInfo" style="display:none;"><strong>Pending:</strong> Student stays with educator until result is finalized.</li>
+          </ul>
+        </div>
+
+        <div class="button-group" style="justify-content:center;">
+          <button class="btn-success" onclick="saveTestResult()">💾 Save Test Result</button>
+          <button class="btn-secondary" onclick="closeTestResultModal()" style="background:#6c757d;color:#fff;">❌ Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTSTANDING BALANCE REPORT MODAL -->
+  <div id="outstandingModal" class="modal" onclick="closeOutstandingModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:900px;">
+      <div class="modal-header">
+        <h2>📊 Outstanding Balance Report</h2>
+        <span class="close" onclick="closeOutstandingModal()">&times;</span>
+      </div>
+      <div id="outstandingReportBody"></div>
+      <div class="no-print" style="margin-top:20px;text-align:center;">
+        <button class="btn-success" onclick="exportOutstandingToExcel()">📥 Export to Excel</button>
+        <button class="btn-secondary" onclick="closeOutstandingModal()" style="background:#6c757d;color:#fff;margin-left:10px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CONFIGURATION
+    const PRICING = {
+      'Code 8': { total: 2000, deposit: 1500, balance: 500, nupay: 250 },
+      'Code 10': { total: 2000, deposit: 1500, balance: 500, nupay: 250 },
+      'Code 14': { total: 4500, deposit: 3000, balance: 1500, nupay: 350 }
+    };
+
+    const BRANCH_EDUCATORS = {
+      'Gold Spot': 'Gold Spot Educator',
+      'Chris Hani': 'Chris Hani Educator',
+      'Bara': 'Bara Educator',
+      'Protea Glen': 'Protea Glen Educator',
+      'Dawn Park': 'Dawn Park Educator'
+    };
+
+    const STAGES = {
+      1: { name: 'Captured', color: '#6c757d', icon: '📝' },
+      2: { name: 'Deposit Paid', color: '#ffc107', icon: '💰' },
+      3: { name: 'With Educator', color: '#17a2b8', icon: '👨‍🏫' },
+      4: { name: 'Ready for Booking', color: '#fd7e14', icon: '✅' },
+      5: { name: 'Booked for Test', color: '#28a745', icon: '📅' },
+      6: { name: 'Test Results', color: '#6f42c1', icon: '📋' }
+    };
+
+    // STATE
+    let students = [];
+    let currentBranchFilter = 'all';
+    let currentStageFilter = 'all';
+    let currentEducatorFilter = 'all';
+    let isDuplicateId = false;
+    let saveDirHandle = null;
+    let saveFileHandle = null;
+
+    // INIT
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('paymentDate').valueAsDate = new Date();
+      document.getElementById('testDate').valueAsDate = new Date();
+      
+      document.querySelectorAll('input[name="testResult"]').forEach(radio => {
+        radio.addEventListener('change', updateTestResultInfo);
+      });
+
+      // Load data on startup
+      refreshAllData();
+    });
+
+    // REFRESH FUNCTION - Reloads everything from localStorage
+    function refreshAllData() {
+      const refreshBtn = document.querySelector('.btn-refresh');
+      refreshBtn.classList.add('refreshing');
+      refreshBtn.disabled = true;
+      
+      try {
+        // Load students from localStorage
+        const storedData = localStorage.getItem('mziyonkeStudents');
+        if (storedData) {
+          students = JSON.parse(storedData);
+          updateDataStatus(true, students.length);
+        } else {
+          students = [];
+          updateDataStatus(false, 0);
+        }
+
+        // Restore file handles
+        restoreFileHandles().then(() => { 
+          writeXlsxToFile().catch(() => {});
+        });
+
+        // Update all displays
+        updateStats();
+        updateFinancialSummary();
+        renderTable();
+
+        // Update refresh time
+        const now = new Date();
+        document.getElementById('lastRefreshTime').textContent = now.toLocaleTimeString();
+
+        showNotification('✅ Data refreshed successfully! ' + students.length + ' students loaded');
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+        showNotification('❌ Error refreshing data: ' + error.message, 'error');
+      } finally {
+        setTimeout(() => {
+          refreshBtn.classList.remove('refreshing');
+          refreshBtn.disabled = false;
+        }, 1000);
+      }
+    }
+
+    function updateDataStatus(hasData, count) {
+      const statusEl = document.getElementById('dataStatus');
+      const iconEl = document.getElementById('dataStatusIcon');
+      const textEl = document.getElementById('dataStatusText');
+      
+      if (hasData && count > 0) {
+        statusEl.classList.remove('empty');
+        statusEl.style.background = '#d4edda';
+        statusEl.style.color = '#155724';
+        iconEl.textContent = '✅';
+        textEl.textContent = `${count} students in database`;
+      } else {
+        statusEl.classList.add('empty');
+        statusEl.style.background = '#f8d7da';
+        statusEl.style.color = '#dc3545';
+        iconEl.textContent = '⚠️';
+        textEl.textContent = 'No data loaded';
+      }
+    }
+
+    // FINANCIAL FUNCTIONS
+    function updateFinancialSummary() {
+      let totalRevenue = 0;
+      let totalCollected = 0;
+      let totalOutstanding = 0;
+      let outstandingCount = 0;
+
+      students.forEach(student => {
+        totalRevenue += student.totalFee || 0;
+        totalCollected += student.amountPaid || 0;
+        
+        if ((student.balance || 0) > 0) {
+          totalOutstanding += student.balance;
+          outstandingCount++;
+        }
+      });
+
+      // document.getElementById('totalRevenue') removed - element hidden
+      // document.getElementById('totalCollected') removed - element hidden
+      document.getElementById('totalOutstanding').textContent = `R${totalOutstanding.toLocaleString()}`;
+      document.getElementById('outstandingCount').textContent = outstandingCount;
+    }
+
+    function viewOutstandingReport() {
+      const modalBody = document.getElementById('outstandingReportBody');
+      const outstandingStudents = students.filter(s => (s.balance || 0) > 0).sort((a, b) => (b.balance || 0) - (a.balance || 0));
+      
+      if (outstandingStudents.length === 0) {
+        modalBody.innerHTML = '<p style="text-align:center;padding:40px;color:#28a745;font-size:1.2em;">✅ No outstanding balances! All students have paid in full.</p>';
+      } else {
+        const branchSummary = {};
+        outstandingStudents.forEach(s => {
+          if (!branchSummary[s.branch]) {
+            branchSummary[s.branch] = { count: 0, total: 0 };
+          }
+          branchSummary[s.branch].count++;
+          branchSummary[s.branch].total += (s.balance || 0);
+        });
+
+        let branchHTML = '<div style="margin-bottom:30px;"><h3 style="margin-bottom:15px;">Outstanding by Branch</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;">';
+        for (const [branch, data] of Object.entries(branchSummary)) {
+          branchHTML += `
+            <div style="background:#f8f9fa;padding:15px;border-radius:8px;border-left:4px solid #dc3545;">
+              <strong>${branch}</strong><br>
+              <span style="font-size:1.3em;color:#dc3545;font-weight:bold;">R${data.total.toLocaleString()}</span><br>
+              <small>${data.count} student${data.count > 1 ? 's' : ''}</small>
+            </div>
+          `;
+        }
+        branchHTML += '</div></div>';
+
+        let tableHTML = `
+          <h3 style="margin-bottom:15px;">Detailed Outstanding Balances</h3>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead style="background:#dc3545;color:white;">
+                <tr>
+                  <th style="padding:12px;text-align:left;">Student</th>
+                  <th style="padding:12px;text-align:left;">ID Number</th>
+                  <th style="padding:12px;text-align:left;">Branch</th>
+                  <th style="padding:12px;text-align:left;">Sales Rep</th>
+                  <th style="padding:12px;text-align:left;">Code</th>
+                  <th style="padding:12px;text-align:right;">Total Fee</th>
+                  <th style="padding:12px;text-align:right;">Paid</th>
+                  <th style="padding:12px;text-align:right;">Outstanding</th>
+                  <th style="padding:12px;text-align:left;">Method</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        outstandingStudents.forEach(s => {
+          const payDate = s.paymentDate ? new Date(s.paymentDate).toLocaleDateString() : 'N/A';
+          tableHTML += `
+            <tr style="border-bottom:1px solid #dee2e6;">
+              <td style="padding:12px;">
+                <strong>${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)}</strong><br>
+                <small style="color:#666;">${escapeHtml(s.phone)}</small>
+              </td>
+              <td style="padding:12px;font-family:monospace;">${escapeHtml(s.idNumber)}</td>
+              <td style="padding:12px;">${escapeHtml(s.branch)}</td>
+              <td style="padding:12px;"><span class="sales-rep-tag">${escapeHtml(s.salesRep || 'N/A')}</span></td>
+              <td style="padding:12px;">${escapeHtml(s.licenseCode)}</td>
+              <td style="padding:12px;text-align:right;">R${(s.totalFee || 0).toLocaleString()}</td>
+              <td style="padding:12px;text-align:right;color:#28a745;">R${(s.amountPaid || 0).toLocaleString()}</td>
+              <td style="padding:12px;text-align:right;color:#dc3545;font-weight:bold;">R${(s.balance || 0).toLocaleString()}</td>
+              <td style="padding:12px;">
+                <span class="payment-method-tag method-${(s.paymentMethod || 'cash').toLowerCase()}">${s.paymentMethod || 'Cash'}</span><br>
+                <small>Last: ${payDate}</small>
+              </td>
+            </tr>
+          `;
+        });
+
+        const totalOutstanding = outstandingStudents.reduce((sum, s) => sum + (s.balance || 0), 0);
+        tableHTML += `
+              </tbody>
+              <tfoot style="background:#f8f9fa;font-weight:bold;">
+                <tr>
+                  <td colspan="7" style="padding:12px;text-align:right;">TOTAL OUTSTANDING:</td>
+                  <td style="padding:12px;text-align:right;color:#dc3545;font-size:1.2em;">R${totalOutstanding.toLocaleString()}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        `;
+
+        modalBody.innerHTML = branchHTML + tableHTML;
+      }
+
+      document.getElementById('outstandingModal').style.display = 'flex';
+    }
+
+    function closeOutstandingModal(e) {
+      if (!e || e.target.id === 'outstandingModal') {
+        document.getElementById('outstandingModal').style.display = 'none';
+      }
+    }
+
+    function exportOutstandingToExcel() {
+      const outstandingStudents = students.filter(s => (s.balance || 0) > 0).sort((a, b) => (b.balance || 0) - (a.balance || 0));
+      
+      if (outstandingStudents.length === 0) {
+        alert('No outstanding balances to export!');
+        return;
+      }
+
+      const headers = ['First Name', 'Last Name', 'ID Number', 'Phone', 'Branch', 'Sales Rep', 'License Code', 'Payment Method', 'Total Fee', 'Amount Paid', 'Outstanding Balance', 'Payment Date', 'Last Payment'];
+      const csv = [
+        headers.join(','),
+        ...outstandingStudents.map(s => [
+          `"${s.firstName || ''}"`,
+          `"${s.lastName || ''}"`,
+          `"${s.idNumber || ''}"`,
+          `"${s.phone || ''}"`,
+          `"${s.branch || ''}"`,
+          `"${s.salesRep || ''}"`,
+          `"${s.licenseCode || ''}"`,
+          `"${s.paymentMethod || ''}"`,
+          `"${s.totalFee || 0}"`,
+          `"${s.amountPaid || 0}"`,
+          `"${s.balance || 0}"`,
+          `"${s.paymentDate || ''}"`,
+          `"${s.paymentHistory && s.paymentHistory.length > 0 ? s.paymentHistory[s.paymentHistory.length - 1].date : ''}"`
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Mziyonke_Outstanding_Balances_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      showNotification('✅ Outstanding report exported!');
+    }
+
+    // FORM FUNCTIONS
+    function updatePricing() {
+      const code = document.getElementById('licenseCode').value;
+      if (!code || !PRICING[code]) return;
+
+      const pricing = PRICING[code];
+      document.getElementById('totalFee').value = `R${pricing.total.toLocaleString()}`;
+      updatePaymentMethod();
+    }
+
+    function updatePaymentMethod() {
+      const code = document.getElementById('licenseCode').value;
+      const method = document.getElementById('paymentMethod').value;
+      
+      if (!code || !PRICING[code]) return;
+
+      const pricing = PRICING[code];
+      const nupayBox = document.getElementById('nupayDetails');
+      const yocoBox = document.getElementById('yocoDetails');
+      const hint = document.getElementById('paymentHint');
+
+      nupayBox.style.display = 'none';
+      yocoBox.style.display = 'none';
+
+      if (method === 'Nupay') {
+        nupayBox.style.display = 'block';
+        document.getElementById('monthlyDebit').value = `R${pricing.nupay}/month`;
+        const months = Math.ceil(pricing.total / pricing.nupay);
+        document.getElementById('nupayMonths').value = `${months} months`;
+        hint.textContent = `Nupay setup fee (if any) or first month R${pricing.nupay}`;
+      } else if (method === 'Yoco') {
+        yocoBox.style.display = 'block';
+        hint.textContent = 'Enter Yoco card payment amount';
+      } else {
+        hint.textContent = method === 'Cash' ? 'Enter cash amount received' : 'Enter EFT amount';
+      }
+
+      checkPayment();
+    }
+
+    function checkPayment() {
+      const code = document.getElementById('licenseCode').value;
+      const amount = parseFloat(document.getElementById('amountPaid').value) || 0;
+      
+      if (!code || !PRICING[code]) return;
+
+      const pricing = PRICING[code];
+      const balance = pricing.total - amount;
+      
+      document.getElementById('balanceRemaining').value = `R${balance.toLocaleString()}`;
+      
+      const depositWarning = document.getElementById('depositWarning');
+      const stageSelect = document.getElementById('initialStage');
+      const method = document.getElementById('paymentMethod').value;
+
+      let canStart = false;
+      if (method === 'Nupay') {
+        canStart = amount > 0;
+      } else {
+        canStart = amount >= pricing.deposit;
+      }
+
+      if (canStart) {
+        depositWarning.style.display = 'none';
+        document.getElementById('depositPaidOption').disabled = false;
+      } else {
+        depositWarning.style.display = 'block';
+        document.getElementById('depositPaidOption').disabled = true;
+        if (stageSelect.value === '2') stageSelect.value = '1';
+      }
+    }
+
+    function validateIdNumber() {
+      const idInput = document.getElementById('idNumber');
+      idInput.value = idInput.value.replace(/\D/g, '').slice(0, 13);
+      if (idInput.value.length === 13) checkDuplicateId();
+    }
+
+    function checkDuplicateId() {
+      const idNumber = document.getElementById('idNumber').value.trim();
+      const warning = document.getElementById('duplicateWarning');
+      const checkIcon = document.getElementById('idCheckIcon');
+      
+      if (idNumber.length < 13) return;
+      
+      const existing = students.find(s => s.idNumber === idNumber);
+      
+      if (existing) {
+        warning.classList.add('show');
+        warning.innerHTML = `
+          ⚠️ <strong>DUPLICATE ID!</strong><br>
+          Already registered: <strong>${existing.firstName} ${existing.lastName}</strong> at ${existing.branch}<br>
+          <button onclick="viewDetails('${existing.id}')" style="margin-top:8px;padding:5px 10px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;">
+            View Student
+          </button>
+        `;
+        checkIcon.classList.remove('show');
+        isDuplicateId = true;
+      } else {
+        warning.classList.remove('show');
+        checkIcon.classList.add('show');
+        isDuplicateId = false;
+      }
+      updateSaveButton();
+    }
+
+    function updateSaveButton() {
+      const btn = document.getElementById('saveBtn');
+      if (isDuplicateId) {
+        btn.disabled = true;
+        btn.textContent = '❌ Duplicate ID';
+        btn.style.background = '#6c757d';
+      } else {
+        btn.disabled = false;
+        btn.textContent = '💾 Capture Student';
+        btn.style.background = '';
+      }
+    }
+
+    // ADD STUDENT
+    function addStudent() {
+      const idNumber = document.getElementById('idNumber').value.trim();
+      
+      if (students.some(s => s.idNumber === idNumber)) {
+        showNotification('❌ Error: This ID already exists!', 'error');
+        return;
+      }
+
+      const code = document.getElementById('licenseCode').value;
+      const branch = document.getElementById('branch').value;
+      const method = document.getElementById('paymentMethod').value;
+      const amount = parseFloat(document.getElementById('amountPaid').value) || 0;
+      const paymentDate = document.getElementById('paymentDate').value;
+      const pricing = PRICING[code];
+      
+      let canStart = false;
+      if (method === 'Nupay') {
+        canStart = amount > 0;
+      } else {
+        canStart = amount >= pricing.deposit;
+      }
+
+      let initialStage = parseInt(document.getElementById('initialStage').value);
+      let educator = null;
+      
+      if (canStart && initialStage === 1) {
+        initialStage = 2;
+      }
+      
+      if (initialStage >= 2) {
+        educator = BRANCH_EDUCATORS[branch];
+      }
+
+      const student = {
+        id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+        firstName: document.getElementById('firstName').value.trim(),
+        lastName: document.getElementById('lastName').value.trim(),
+        idNumber: idNumber,
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        salesRep: document.getElementById('salesRep').value.trim(),
+        branch: branch,
+        licenseCode: code,
+        totalFee: pricing.total,
+        depositRequired: pricing.deposit,
+        amountPaid: amount,
+        balance: pricing.total - amount,
+        paymentMethod: method,
+        paymentDate: paymentDate,
+        paymentRef: document.getElementById('paymentRef').value.trim(),
+        nupayDetails: method === 'Nupay' ? {
+          monthlyDebit: pricing.nupay,
+          bankName: document.getElementById('bankName').value.trim(),
+          accountNumber: document.getElementById('accountNumber').value.trim()
+        } : null,
+        yocoDetails: method === 'Yoco' ? {
+          transactionId: document.getElementById('yocoTransId').value.trim(),
+          cardType: document.getElementById('yocoCardType').value
+        } : null,
+        educator: educator,
+        currentStage: initialStage,
+        testResult: null,
+        testResultDate: null,
+        testResultNotes: null,
+        paymentHistory: [{
+          date: paymentDate,
+          amount: amount,
+          method: method,
+          reference: document.getElementById('paymentRef').value.trim() || 'Initial payment',
+          balanceAfter: pricing.total - amount
+        }],
+        stageHistory: [{
+          stage: 1,
+          date: new Date().toLocaleString(),
+          notes: `Captured at ${branch} by ${document.getElementById('salesRep').value.trim()}`
+        }],
+        dateAdded: new Date().toLocaleString()
+      };
+
+      if (initialStage >= 2) {
+        student.stageHistory.push({
+          stage: 2,
+          date: new Date().toLocaleString(),
+          notes: `Payment verified (${method}) on ${paymentDate}. ${educator ? 'Assigned to ' + educator : ''}`
+        });
+      }
+
+      students.push(student);
+      saveToStorage();
+      clearForm();
+      
+      const msg = canStart 
+        ? `✅ Student captured! ${method === 'Nupay' ? 'Nupay active' : 'Payment received'} - assigned to ${educator}`
+        : `✅ Student captured! Pending ${method === 'Nupay' ? 'Nupay setup' : 'deposit payment'}`;
+      showNotification(msg);
+    }
+
+    function clearForm() {
+      document.getElementById('studentForm').reset();
+      document.getElementById('duplicateWarning').classList.remove('show');
+      document.getElementById('idCheckIcon').classList.remove('show');
+      document.getElementById('totalFee').value = '';
+      document.getElementById('balanceRemaining').value = '';
+      document.getElementById('nupayDetails').style.display = 'none';
+      document.getElementById('yocoDetails').style.display = 'none';
+      document.getElementById('depositWarning').style.display = 'none';
+      document.getElementById('paymentDate').valueAsDate = new Date();
+      isDuplicateId = false;
+      updateSaveButton();
+    }
+
+    function clearAllData() {
+      if (confirm('Are you sure you want to clear ALL student data? This cannot be undone.')) {
+        students = [];
+        saveToStorage();
+        updateDataStatus(false, 0);
+        showNotification('🗑️ All data cleared!');
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem('mziyonkeStudents', JSON.stringify(students));
+      writeXlsxToFile().catch(() => {});
+      updateStats();
+      updateFinancialSummary();
+      updateDataStatus(true, students.length);
+      renderTable();
+    }
+
+    // RENDER TABLE
+    function renderTable(data = students) {
+      const tbody = document.getElementById('studentsTableBody');
+      
+      if (currentBranchFilter !== 'all') {
+        data = data.filter(s => s.branch === currentBranchFilter);
+      }
+      if (currentStageFilter !== 'all') {
+        data = data.filter(s => s.currentStage == currentStageFilter);
+      }
+      
+      // Educator status filter
+      if (currentEducatorFilter !== 'all') {
+        if (currentEducatorFilter === 'active') {
+          data = data.filter(s => s.currentStage < 6 || (s.currentStage === 6 && s.testResult === 'pending'));
+        } else if (currentEducatorFilter === 'completed') {
+          data = data.filter(s => s.currentStage === 6 && s.testResult === 'passed');
+        } else if (currentEducatorFilter === 'failed') {
+          data = data.filter(s => s.currentStage === 6 && (s.testResult === 'failed' || s.testResult === 'pending'));
+        }
+      }
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">No students found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.map(student => {
+        const stage = STAGES[student.currentStage] || STAGES[1];
+        const isDepositComplete = (student.amountPaid || 0) >= (student.depositRequired || 0);
+        const methodClass = `method-${(student.paymentMethod || 'cash').toLowerCase()}`;
+        const payDate = student.paymentDate ? new Date(student.paymentDate).toLocaleDateString() : 'N/A';
+        
+        let testResultHTML = '-';
+        if (student.currentStage === 6 && student.testResult) {
+          const resultClass = student.testResult === 'passed' ? 'test-result-passed' : 
+                             student.testResult === 'failed' ? 'test-result-failed' : 'test-result-pending';
+          const resultIcon = student.testResult === 'passed' ? '✅' : 
+                            student.testResult === 'failed' ? '❌' : '⏳';
+          testResultHTML = `<span class="${resultClass}">${resultIcon} ${student.testResult.toUpperCase()}</span>`;
+          if (student.testResultNotes) {
+            testResultHTML += `<br><small style="color:#666;font-size:.75em;">${escapeHtml(student.testResultNotes.substring(0, 30))}${student.testResultNotes.length > 30 ? '...' : ''}</small>`;
+          }
+        }
+        
+        return `
+          <tr>
+            <td>
+              <strong style="color:#dc3545;font-family:monospace;">
+                ${escapeHtml(student.idNumber)}
+              </strong>
+            </td>
+            <td>
+              <strong>${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}</strong><br>
+              <small>${escapeHtml(student.phone)}</small>
+            </td>
+            <td>
+              <span class="branch-tag">${escapeHtml(student.branch)}</span><br>
+              <small style="color:#666;">
+                ${student.educator ? '👨‍🏫 ' + escapeHtml(student.educator) : '⏳ No educator yet'}
+              </small>
+            </td>
+            <td>
+              <strong>${escapeHtml(student.licenseCode)}</strong><br>
+              <small>R${(student.totalFee || 0).toLocaleString()}</small>
+            </td>
+            <td>
+              <span class="payment-badge ${isDepositComplete ? 'payment-complete' : 'payment-partial'}">
+                ${isDepositComplete ? '✓' : '⏳'} R${(student.amountPaid || 0).toLocaleString()}
+              </span>
+              <span class="payment-method-tag ${methodClass}">${student.paymentMethod || 'Cash'}</span><br>
+              <small style="color:#666;">Paid: ${payDate}</small><br>
+              <small>Bal: R${(student.balance || 0).toLocaleString()}</small>
+              ${student.paymentMethod === 'Nupay' ? '<br><small style="color:#4caf50;">🔄 Debit active</small>' : ''}
+              ${student.paymentMethod === 'Yoco' ? '<br><small style="color:#ff6b35;">💳 Card</small>' : ''}
+            </td>
+            <td>
+              <span class="stage-badge" style="background:${stage.color};${stage.color === '#ffc107' ? 'color:#000;' : ''}">
+                ${stage.icon} ${stage.name}
+              </span>
+            </td>
+            <td>
+              ${testResultHTML}
+            </td>
+            <td>
+              <span class="sales-rep-tag">${escapeHtml(student.salesRep || 'N/A')}</span>
+            </td>
+            <td>${student.dateAdded}</td>
+            <td class="action-buttons no-print">
+              <button class="action-btn btn-primary" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation(); handleViewClick(this);">👁️ View</button>
+              <button class="action-btn btn-edit" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation(); handleEditClick(this);">✏️ Edit</button>
+              ${getActionButtons(student)}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getActionButtons(student) {
+      const buttons = [];
+      const isDepositComplete = (student.amountPaid || 0) >= (student.depositRequired || 0);
+      const isNupay = student.paymentMethod === 'Nupay';
+
+      if (student.currentStage === 1 || (isNupay && (student.balance || 0) > 0)) {
+        if (isNupay) {
+          buttons.push(`<button class="action-btn btn-nupay" onclick="recordNupayPayment('${student.id}')">🔄 Record Debit</button>`);
+        } else {
+          buttons.push(`<button class="action-btn btn-warning" onclick="recordPayment('${student.id}')">💰 Record Payment</button>`);
+        }
+      }
+      
+      if (student.currentStage === 2) {
+        buttons.push(`<button class="action-btn btn-info" onclick="startClasses('${student.id}')">👨‍🏫 Start Classes</button>`);
+      }
+      
+      if (student.currentStage === 3) {
+        buttons.push(`<button class="action-btn btn-orange" onclick="markReady('${student.id}')">✅ Ready</button>`);
+      }
+      
+      if (student.currentStage === 4) {
+        buttons.push(`<button class="action-btn btn-success" onclick="bookTest('${student.id}')">📅 Book Test</button>`);
+      }
+      
+      if (student.currentStage === 5) {
+        buttons.push(`<button class="action-btn btn-purple" onclick="openTestResultModal('${student.id}')">📝 Test Results</button>`);
+      }
+
+      // Add delete button for all students
+      buttons.push(`<button class="action-btn btn-whatsapp" onclick="event.stopPropagation(); openWhatsApp('${encodeURIComponent(student.phone)}', '${encodeURIComponent(student.firstName)}', '${encodeURIComponent(student.balance || 0)}', '${encodeURIComponent(student.currentStage)}', '${encodeURIComponent(student.licenseCode || '')}');" title="Message on WhatsApp">💬 WhatsApp</button>`);
+
+      buttons.push(`<button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteStudent('${student.id}', event);" title="Remove student">🗑️ Delete</button>`);
+
+      return buttons.join('');
+    }
+
+            
+    // SAFE FIND STUDENT - handles various ID formats
+    function findStudentById(studentId) {
+      if (!studentId) {
+        console.error('findStudentById: No ID provided');
+        return null;
+      }
+
+      console.log('Looking for student with ID:', studentId);
+      console.log('Total students:', students.length);
+
+      // Try exact match first
+      let index = students.findIndex(s => s.id === studentId);
+      if (index !== -1) {
+        console.log('Found by exact match at index:', index);
+        return { student: students[index], index: index };
+      }
+
+      // Try trimming whitespace
+      const trimmedId = studentId.trim();
+      if (trimmedId !== studentId) {
+        index = students.findIndex(s => s.id === trimmedId);
+        if (index !== -1) {
+          console.log('Found by trimmed match at index:', index);
+          return { student: students[index], index: index };
+        }
+      }
+
+      // Try decoding if it looks encoded
+      try {
+        const decodedId = decodeURIComponent(studentId);
+        if (decodedId !== studentId) {
+          index = students.findIndex(s => s.id === decodedId);
+          if (index !== -1) {
+            console.log('Found by decoded match at index:', index);
+            return { student: students[index], index: index };
+          }
+        }
+      } catch(e) {}
+
+      // Log all IDs for debugging
+      console.log('Available student IDs:', students.map(s => ({ 
+        id: s.id, 
+        name: s.firstName + ' ' + s.lastName,
+        idType: typeof s.id,
+        idLength: s.id ? s.id.length : 0
+      })));
+
+      return null;
+    }
+
+
+    // OPEN WHATSAPP - send message to student
+    function openWhatsApp(phone, firstName, balance, stage, licenseCode) {
+      try {
+        // Decode parameters
+        phone = decodeURIComponent(phone);
+        firstName = decodeURIComponent(firstName);
+        balance = decodeURIComponent(balance);
+        stage = decodeURIComponent(stage || '1');
+        licenseCode = decodeURIComponent(licenseCode || '');
+
+        // Clean phone number (remove spaces, ensure +27 or 0 prefix)
+        let cleanPhone = phone.replace(/\s+/g, '');
+
+        // Format for South Africa
+        if (cleanPhone.startsWith('0')) {
+          cleanPhone = '27' + cleanPhone.substring(1);
+        } else if (!cleanPhone.startsWith('+') && !cleanPhone.startsWith('27')) {
+          cleanPhone = '27' + cleanPhone;
+        }
+
+        // Remove + if present
+        cleanPhone = cleanPhone.replace('+', '');
+
+        console.log('Opening WhatsApp for:', cleanPhone);
+
+        // Get stage name
+        const stageNames = {
+          1: 'Registration/Captured',
+          2: 'Deposit Paid',
+          3: 'With Educator (Learning)',
+          4: 'Ready for Booking',
+          5: 'Booked for Test',
+          6: 'Test Results'
+        };
+        const stageName = stageNames[stage] || 'Registration';
+
+        // Create comprehensive message
+        let message = `Hi ${firstName}, greetings from Mziyonke Driving School! 👋\n\n`;
+
+        // Add balance info
+        if (parseFloat(balance) > 0) {
+          message += `💰 *Outstanding Balance:* R${balance}\n`;
+          message += `Please arrange payment when possible.\n\n`;
+        } else {
+          message += `✅ Your account is fully paid up. Thank you!\n\n`;
+        }
+
+        // Add license progress section
+        message += `🚗 *License Progress Check:*\n`;
+        message += `You are currently at: *${stageName}*\n`;
+        if (licenseCode) {
+          message += `License Code: *${licenseCode}*\n`;
+        }
+        message += `\n`;
+        message += `How is your progress going? Have you started your lessons? What stage are you currently at in your journey to getting your driver's license? Please let us know if you need any assistance or have any questions.\n\n`;
+        message += `Reply when you can. Safe driving! 🚦`;
+
+        // Encode message for URL
+        const encodedMessage = encodeURIComponent(message);
+
+        // Create WhatsApp URL (works for both web and app)
+        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+        // Open in new tab
+        window.open(whatsappUrl, '_blank');
+
+        showNotification('💬 Opening WhatsApp for ' + firstName);
+
+      } catch (error) {
+        console.error('WhatsApp error:', error);
+        alert('Error opening WhatsApp: ' + error.message);
+      }
+    }
+
+// HANDLER FOR VIEW BUTTON
+    function handleViewClick(button) {
+      let studentId = button.getAttribute('data-student-id');
+      try {
+        studentId = decodeURIComponent(studentId);
+      } catch(e) {}
+      console.log('View clicked for ID:', studentId);
+      viewDetails(studentId);
+    }
+
+    // HANDLER FOR EDIT BUTTON  
+    function handleEditClick(button) {
+      let studentId = button.getAttribute('data-student-id');
+      try {
+        studentId = decodeURIComponent(studentId);
+      } catch(e) {}
+      console.log('Edit clicked for ID:', studentId);
+      openEditModal(studentId);
+    }
+
+// HANDLE DELETE CLICK - extracts ID from data attribute
+    function handleDeleteClick(button, event) {
+      let studentId = button.getAttribute('data-student-id');
+      // Decode URI component in case ID has special chars
+      try {
+        studentId = decodeURIComponent(studentId);
+      } catch(e) {
+        // If decode fails, use as-is
+      }
+      console.log('Delete clicked, extracted ID:', studentId);
+      if (!studentId) {
+        console.error('No data-student-id found on button');
+        alert('Error: Could not find student ID');
+        return;
+      }
+      deleteStudent(studentId, event);
+    }
+
+    // DELETE STUDENT FUNCTION - FIXED
+    function deleteStudent(studentId, event) {
+      // Prevent event bubbling
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+
+      console.log('Deleting student ID:', studentId);
+
+      // Find student index
+      const found = findStudentById(studentId);
+      const studentIndex = found ? found.index : -1;
+      if (studentIndex === -1) {
+        console.error('Student not found:', studentId);
+        alert('Error: Student not found!');
+        return;
+      }
+
+      const student = found ? found.student : null;
+
+      const confirmMsg = 'Are you sure you want to DELETE this student?\n\n' +
+        'Name: ' + student.firstName + ' ' + student.lastName + '\n' +
+        'ID: ' + student.idNumber + '\n' +
+        'Branch: ' + student.branch + '\n\n' +
+        'This action CANNOT be undone!';
+
+      if (confirm(confirmMsg)) {
+        try {
+          // Remove using splice
+          students.splice(studentIndex, 1);
+
+          // Save immediately
+          localStorage.setItem('mziyonkeStudents', JSON.stringify(students));
+
+          // Update all displays
+          updateStats();
+          updateFinancialSummary();
+          updateDataStatus(true, students.length);
+          renderTable();
+
+          showNotification('✅ Student deleted: ' + student.firstName + ' ' + student.lastName);
+          console.log('Delete successful');
+        } catch (error) {
+          console.error('Delete failed:', error);
+          alert('Delete failed: ' + error.message);
+        }
+      }
+    }
+
+    // EDIT FUNCTIONS
+    function openEditModal(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      document.getElementById('editStudentId').value = student.id;
+      document.getElementById('editFirstName').value = student.firstName || '';
+      document.getElementById('editLastName').value = student.lastName || '';
+      document.getElementById('editIdNumber').value = student.idNumber || '';
+      document.getElementById('editPhone').value = student.phone || '';
+      document.getElementById('editEmail').value = student.email || '';
+      document.getElementById('editSalesRep').value = student.salesRep || '';
+      document.getElementById('editBranch').value = student.branch || 'Gold Spot';
+      document.getElementById('editLicenseCode').value = student.licenseCode || 'Code 8';
+      document.getElementById('editCurrentStage').value = `${STAGES[student.currentStage]?.name || 'Unknown'} (Stage ${student.currentStage || 1})`;
+      document.getElementById('editEducator').value = student.educator || 'Not assigned';
+      document.getElementById('editTotalFee').value = student.totalFee || 0;
+      document.getElementById('editAmountPaid').value = student.amountPaid || 0;
+      document.getElementById('editBalance').value = student.balance || 0;
+      document.getElementById('editPaymentMethod').value = student.paymentMethod || 'Cash';
+
+      document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal(e) {
+      if (!e || e.target.id === 'editModal') {
+        document.getElementById('editModal').style.display = 'none';
+      }
+    }
+
+    function updateEditEducator() {
+      const branch = document.getElementById('editBranch').value;
+      const studentId = document.getElementById('editStudentId').value;
+      const student = students.find(s => s.id === studentId);
+      
+      if (student && student.currentStage >= 2) {
+        document.getElementById('editEducator').value = BRANCH_EDUCATORS[branch];
+      }
+    }
+
+    function updateEditPricing() {
+      const code = document.getElementById('editLicenseCode').value;
+      if (PRICING[code]) {
+        const studentId = document.getElementById('editStudentId').value;
+        const student = students.find(s => s.id === studentId);
+        
+        if (student && student.totalFee === PRICING[student.licenseCode]?.total) {
+          document.getElementById('editTotalFee').value = PRICING[code].total;
+          updateEditBalance();
+        }
+      }
+    }
+
+    function updateEditBalance() {
+      const total = parseFloat(document.getElementById('editTotalFee').value) || 0;
+      const paid = parseFloat(document.getElementById('editAmountPaid').value) || 0;
+      document.getElementById('editBalance').value = total - paid;
+    }
+
+    function saveEdit() {
+      const studentId = document.getElementById('editStudentId').value;
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const oldBranch = student.branch;
+      const newBranch = document.getElementById('editBranch').value;
+
+      student.firstName = document.getElementById('editFirstName').value.trim();
+      student.lastName = document.getElementById('editLastName').value.trim();
+      student.phone = document.getElementById('editPhone').value.trim();
+      student.email = document.getElementById('editEmail').value.trim();
+      student.salesRep = document.getElementById('editSalesRep').value.trim();
+      student.branch = newBranch;
+      student.licenseCode = document.getElementById('editLicenseCode').value;
+      student.paymentMethod = document.getElementById('editPaymentMethod').value;
+      
+      if (oldBranch !== newBranch && student.currentStage >= 2) {
+        student.educator = BRANCH_EDUCATORS[newBranch];
+      }
+      
+      const newAmountPaid = parseFloat(document.getElementById('editAmountPaid').value) || 0;
+      const oldAmountPaid = student.amountPaid || 0;
+      
+      if (newAmountPaid !== oldAmountPaid) {
+        const difference = newAmountPaid - oldAmountPaid;
+        student.amountPaid = newAmountPaid;
+        student.balance = (student.totalFee || 0) - newAmountPaid;
+        
+        if (!student.paymentHistory) student.paymentHistory = [];
+        if (difference !== 0) {
+          student.paymentHistory.push({
+            date: new Date().toISOString().split('T')[0],
+            amount: Math.abs(difference),
+            method: student.paymentMethod,
+            reference: difference > 0 ? 'Additional payment (edited)' : 'Payment adjustment (edited)',
+            balanceAfter: student.balance
+          });
+        }
+      }
+
+      saveToStorage();
+      closeEditModal();
+      showNotification('✅ Student details updated successfully!');
+    }
+
+    // TEST RESULT FUNCTIONS
+    function openTestResultModal(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      document.getElementById('testStudentId').value = student.id;
+      document.getElementById('testStudentName').textContent = `${student.firstName} ${student.lastName}`;
+      document.getElementById('testStudentDetails').innerHTML = `
+        ID: ${student.idNumber} | Code: ${student.licenseCode} | Branch: ${student.branch}<br>
+        Educator: ${student.educator || 'Not assigned'}
+      `;
+      
+      document.querySelectorAll('input[name="testResult"]').forEach(r => r.checked = false);
+      document.getElementById('testDate').valueAsDate = new Date();
+      document.getElementById('testNotes').value = '';
+      document.getElementById('testResultInfo').style.display = 'none';
+
+      document.getElementById('testResultModal').style.display = 'flex';
+    }
+
+    function updateTestResultInfo() {
+      const selected = document.querySelector('input[name="testResult"]:checked');
+      const infoDiv = document.getElementById('testResultInfo');
+      
+      if (!selected) {
+        infoDiv.style.display = 'none';
+        return;
+      }
+      
+      infoDiv.style.display = 'block';
+      document.getElementById('passedInfo').style.display = 'none';
+      document.getElementById('failedInfo').style.display = 'none';
+      document.getElementById('pendingInfo').style.display = 'none';
+      
+      if (selected.value === 'passed') {
+        document.getElementById('passedInfo').style.display = 'list-item';
+      } else if (selected.value === 'failed') {
+        document.getElementById('failedInfo').style.display = 'list-item';
+      } else if (selected.value === 'pending') {
+        document.getElementById('pendingInfo').style.display = 'list-item';
+      }
+    }
+
+    function saveTestResult() {
+      const studentId = document.getElementById('testStudentId').value;
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const selectedResult = document.querySelector('input[name="testResult"]:checked');
+      if (!selectedResult) {
+        alert('Please select a test result (Passed, Failed, or Pending)');
+        return;
+      }
+
+      const testDate = document.getElementById('testDate').value;
+      if (!testDate) {
+        alert('Please enter the test date');
+        return;
+      }
+
+      const testNotes = document.getElementById('testNotes').value.trim();
+      if (!testNotes && (selectedResult.value === 'failed' || selectedResult.value === 'pending')) {
+        alert('Please enter notes/reason for Failed or Pending status');
+        return;
+      }
+
+      const result = selectedResult.value;
+      
+      student.currentStage = 6;
+      student.testResult = result;
+      student.testResultDate = testDate;
+      student.testResultNotes = testNotes;
+      
+      if (!student.stageHistory) student.stageHistory = [];
+      let stageNotes = `Test result recorded: ${result.toUpperCase()} on ${testDate}`;
+      if (result === 'failed') {
+        stageNotes += `. Reason: ${testNotes}. Student remains with educator for re-training.`;
+      } else if (result === 'pending') {
+        stageNotes += `. Pending reason: ${testNotes}. Awaiting final outcome.`;
+      } else {
+        stageNotes += `. Student completed successfully!`;
+      }
+      
+      student.stageHistory.push({
+        stage: 6,
+        date: new Date().toLocaleString(),
+        notes: stageNotes
+      });
+
+      saveToStorage();
+      closeTestResultModal();
+      
+      const msg = result === 'passed' 
+        ? `✅ Test result saved! ${student.firstName} has PASSED and completed the course!`
+        : result === 'failed'
+        ? `⚠️ Test result saved! ${student.firstName} FAILED. Student stays with educator for re-training.`
+        : `⏳ Test result saved! ${student.firstName} status is PENDING.`;
+      showNotification(msg);
+    }
+
+    function closeTestResultModal(e) {
+      if (!e || e.target.id === 'testResultModal') {
+        document.getElementById('testResultModal').style.display = 'none';
+      }
+    }
+
+    // PAYMENT FUNCTIONS
+    function recordPayment(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const amount = prompt(`Enter payment amount:\nTotal Fee: R${student.totalFee || 0}\nPaid so far: R${student.amountPaid || 0}\nBalance: R${student.balance || 0}`);
+      if (!amount || isNaN(amount) || amount <= 0) return;
+
+      const method = prompt('Payment method:\n1. Cash\n2. EFT\n3. Yoco\n4. Nupay\n\nEnter number or name:', 'Cash');
+      if (!method) return;
+
+      const methodMap = { '1': 'Cash', '2': 'EFT', '3': 'Yoco', '4': 'Nupay' };
+      const paymentMethod = methodMap[method] || method;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const payDate = prompt('Enter payment date (YYYY-MM-DD):', today);
+      if (!payDate) return;
+
+      const newAmount = (student.amountPaid || 0) + parseFloat(amount);
+      const canStartNow = newAmount >= (student.depositRequired || 0) && student.currentStage === 1;
+
+      student.amountPaid = newAmount;
+      student.balance = (student.totalFee || 0) - newAmount;
+      
+      if (!student.paymentHistory) student.paymentHistory = [];
+      student.paymentHistory.push({
+        date: payDate,
+        amount: parseFloat(amount),
+        method: paymentMethod,
+        reference: 'Additional payment',
+        balanceAfter: student.balance
+      });
+
+      if (canStartNow) {
+        student.currentStage = 2;
+        student.educator = BRANCH_EDUCATORS[student.branch];
+        if (!student.stageHistory) student.stageHistory = [];
+        student.stageHistory.push({
+          stage: 2,
+          date: new Date().toLocaleString(),
+          notes: `Deposit completed on ${payDate}. Payment: ${paymentMethod}. Assigned to ${student.educator}`
+        });
+        showNotification(`✅ Payment recorded! Deposit complete. Assigned to ${student.educator}`);
+      } else {
+        showNotification(`✅ Payment recorded: R${amount} via ${paymentMethod} on ${payDate}`);
+      }
+
+      saveToStorage();
+    }
+
+    function recordNupayPayment(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const monthlyAmount = PRICING[student.licenseCode]?.nupay || 250;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const debitDate = prompt(`Record Nupay debit of R${monthlyAmount}?\n\nEnter debit date (YYYY-MM-DD):`, today);
+      if (!debitDate) return;
+
+      const newAmount = (student.amountPaid || 0) + monthlyAmount;
+      const canStartNow = student.currentStage === 1 && newAmount > 0;
+
+      student.amountPaid = newAmount;
+      student.balance = Math.max(0, (student.totalFee || 0) - newAmount);
+      
+      if (!student.paymentHistory) student.paymentHistory = [];
+      student.paymentHistory.push({
+        date: debitDate,
+        amount: monthlyAmount,
+        method: 'Nupay',
+        reference: 'Monthly debit',
+        balanceAfter: student.balance
+      });
+
+      if (canStartNow) {
+        student.currentStage = 2;
+        student.educator = BRANCH_EDUCATORS[student.branch];
+        if (!student.stageHistory) student.stageHistory = [];
+        student.stageHistory.push({
+          stage: 2,
+          date: new Date().toLocaleString(),
+          notes: `Nupay activated on ${debitDate}. Assigned to ${student.educator}`
+        });
+        showNotification(`✅ Nupay debit recorded! Student assigned to ${student.educator}`);
+      } else {
+        showNotification(`✅ Nupay debit recorded: R${monthlyAmount} on ${debitDate}`);
+      }
+
+      saveToStorage();
+    }
+
+    // STAGE PROGRESSION
+    function startClasses(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      student.currentStage = 3;
+      if (!student.stageHistory) student.stageHistory = [];
+      student.stageHistory.push({
+        stage: 3,
+        date: new Date().toLocaleString(),
+        notes: `Classes started with ${student.educator}`
+      });
+
+      saveToStorage();
+      showNotification(`✅ ${student.firstName} started classes with ${student.educator}`);
+    }
+
+    function markReady(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const notes = prompt('Enter readiness confirmation:');
+      
+      student.currentStage = 4;
+      if (!student.stageHistory) student.stageHistory = [];
+      student.stageHistory.push({
+        stage: 4,
+        date: new Date().toLocaleString(),
+        notes: notes || 'Student ready for test booking'
+      });
+
+      saveToStorage();
+      showNotification(`✅ ${student.firstName} marked ready for booking!`);
+    }
+
+    function bookTest(studentId) {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      const bookingDetails = prompt('Enter test booking date and details:');
+      if (!bookingDetails) return;
+
+      student.currentStage = 5;
+      if (!student.stageHistory) student.stageHistory = [];
+      student.stageHistory.push({
+        stage: 5,
+        date: new Date().toLocaleString(),
+        notes: `Test booked: ${bookingDetails}`
+      });
+
+      saveToStorage();
+      showNotification(`✅ Test booked for ${student.firstName}!`);
+    }
+
+    // VIEW DETAILS
+    function viewDetails(id) {
+      const student = students.find(s => s.id === id);
+      if (!student) return;
+
+      const modalBody = document.getElementById('modalBody');
+      const stageActions = document.getElementById('stageActions');
+
+      let paymentHTML = '';
+      if (student.paymentHistory && student.paymentHistory.length > 0) {
+        paymentHTML = `
+          <div class="payment-history">
+            <h4 style="margin-bottom:10px;">Payment History</h4>
+            ${student.paymentHistory.map(p => `
+              <div class="payment-record">
+                <span>${new Date(p.date).toLocaleDateString()}</span>
+                <span><strong>R${(p.amount || 0).toLocaleString()}</strong> ${p.method}</span>
+                <span>Bal: R${(p.balanceAfter || 0).toLocaleString()}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      let timelineHTML = '<div class="stage-timeline">';
+      for (let i = 1; i <= 6; i++) {
+        const history = student.stageHistory?.find(h => h.stage === i);
+        let isDone = i < (student.currentStage || 1);
+        let isCurrent = i === (student.currentStage || 1);
+        let itemClass = '';
+        let numberColor = STAGES[i]?.color || '#6c757d';
+        
+        if (i === 6 && student.testResult) {
+          if (student.testResult === 'passed') {
+            isDone = true;
+            isCurrent = false;
+          } else if (student.testResult === 'failed') {
+            itemClass = 'failed';
+          } else if (student.testResult === 'pending') {
+            itemClass = 'pending';
+          }
+        }
+        
+        timelineHTML += `
+          <div class="timeline-item ${isDone ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${itemClass}">
+            <div class="timeline-number" style="background:${numberColor}">${i}</div>
+            <div style="flex:1;">
+              <div style="font-weight:600;">${STAGES[i]?.icon || '📝'} ${STAGES[i]?.name || 'Stage ' + i}</div>
+              ${history ? `<small>${history.date}</small>` : '<small style="color:#999;">Pending</small>'}
+              ${history?.notes ? `<div style="margin-top:5px;font-size:.9em;">${escapeHtml(history.notes)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }
+      timelineHTML += '</div>';
+
+      let methodDetailsHTML = '';
+      
+      if (student.paymentMethod === 'Nupay' && student.nupayDetails) {
+        methodDetailsHTML = `
+          <div style="background:#e8f5e9;padding:15px;border-radius:8px;margin-bottom:15px;border-left:4px solid #4caf50;">
+            <h4 style="color:#4caf50;margin-bottom:10px;">🔄 Nupay Details</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.9em;">
+              <div><strong>Monthly Debit:</strong> R${student.nupayDetails.monthlyDebit || 'N/A'}</div>
+              <div><strong>Bank:</strong> ${escapeHtml(student.nupayDetails.bankName) || 'Not specified'}</div>
+              <div><strong>Account:</strong> ${escapeHtml(student.nupayDetails.accountNumber) || 'Not specified'}</div>
+            </div>
+          </div>
+        `;
+      } else if (student.paymentMethod === 'Yoco' && student.yocoDetails) {
+        methodDetailsHTML = `
+          <div style="background:#fff3e0;padding:15px;border-radius:8px;margin-bottom:15px;border-left:4px solid #ff6b35;">
+            <h4 style="color:#ff6b35;margin-bottom:10px;">💳 Yoco Details</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.9em;">
+              <div><strong>Transaction ID:</strong> ${escapeHtml(student.yocoDetails.transactionId) || 'Not specified'}</div>
+              <div><strong>Card Type:</strong> ${escapeHtml(student.yocoDetails.cardType) || 'Not specified'}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      let testResultHTML = '';
+      if (student.currentStage === 6 && student.testResult) {
+        const resultColor = student.testResult === 'passed' ? '#28a745' : 
+                           student.testResult === 'failed' ? '#dc3545' : '#ffc107';
+        testResultHTML = `
+          <div style="background:${resultColor}15;padding:15px;border-radius:8px;margin-bottom:15px;border-left:4px solid ${resultColor};">
+            <h4 style="color:${resultColor};margin-bottom:10px;">📝 Test Result</h4>
+            <div style="font-size:1.2em;font-weight:bold;color:${resultColor};text-transform:uppercase;">
+              ${student.testResult === 'passed' ? '✅ PASSED' : student.testResult === 'failed' ? '❌ FAILED' : '⏳ PENDING'}
+            </div>
+            <div style="margin-top:10px;font-size:.9em;">
+              <strong>Test Date:</strong> ${student.testResultDate || 'N/A'}<br>
+              <strong>Notes:</strong> ${escapeHtml(student.testResultNotes || 'N/A')}
+            </div>
+          </div>
+        `;
+      }
+
+      const payDate = student.paymentDate ? new Date(student.paymentDate).toLocaleDateString() : 'N/A';
+
+      modalBody.innerHTML = `
+        <div style="background:#f8f9fa;padding:20px;border-radius:10px;margin-bottom:20px;border-left:4px solid #dc3545;">
+          <h3 style="margin-bottom:15px;">${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.9em;">
+            <div><strong style="color:#dc3545;">ID:</strong> ${escapeHtml(student.idNumber)}</div>
+            <div><strong>Branch:</strong> ${escapeHtml(student.branch)}</div>
+            <div><strong>Educator:</strong> ${escapeHtml(student.educator) || 'Not assigned'}</div>
+            <div><strong>Code:</strong> ${escapeHtml(student.licenseCode)}</div>
+            <div><strong>Sales Rep:</strong> <span class="sales-rep-tag">${escapeHtml(student.salesRep || 'N/A')}</span></div>
+            <div><strong>Payment Method:</strong> <span class="payment-method-tag method-${(student.paymentMethod || 'cash').toLowerCase()}">${student.paymentMethod || 'Cash'}</span></div>
+            <div><strong>Payment Date:</strong> ${payDate}</div>
+            <div><strong>Total Fee:</strong> R${(student.totalFee || 0).toLocaleString()}</div>
+            <div><strong>Paid:</strong> R${(student.amountPaid || 0).toLocaleString()}</div>
+            <div><strong>Balance:</strong> R${(student.balance || 0).toLocaleString()}</div>
+          </div>
+        </div>
+        ${methodDetailsHTML}
+        ${testResultHTML}
+        ${paymentHTML}
+        ${timelineHTML}
+      `;
+
+      stageActions.innerHTML = getActionButtons(student).replace(/action-btn/g, '').replace(/btn-small/g, '');
+      document.getElementById('detailModal').style.display = 'flex';
+    }
+
+    function closeModal(e) {
+      if (!e || e.target.id === 'detailModal') {
+        document.getElementById('detailModal').style.display = 'none';
+      }
+    }
+
+    // FILTERS
+    function changeBranch() {
+      currentBranchFilter = document.getElementById('currentBranch').value;
+      renderTable();
+    }
+
+    function filterByBranch(branch, el) {
+      currentBranchFilter = branch;
+      currentEducatorFilter = 'all';
+      document.querySelectorAll('.branch-filter-btn').forEach(btn => btn.classList.remove('active'));
+      el.classList.add('active');
+      renderTable();
+    }
+
+    function filterByStage(stage) {
+      currentStageFilter = stage;
+      currentEducatorFilter = 'all';
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      renderTable();
+    }
+
+    function filterByEducatorStatus(status, el) {
+      currentEducatorFilter = status;
+      currentStageFilter = 'all';
+      document.querySelectorAll('.educator-filter-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.branch-filter-btn').forEach(btn => btn.classList.remove('active'));
+      el.classList.add('active');
+      renderTable();
+    }
+
+    function searchStudents() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      let filtered = students.filter(s => 
+        (s.firstName || '').toLowerCase().includes(term) ||
+        (s.lastName || '').toLowerCase().includes(term) ||
+        (s.idNumber || '').includes(term) ||
+        (s.phone || '').includes(term) ||
+        (s.branch || '').toLowerCase().includes(term) ||
+        (s.salesRep || '').toLowerCase().includes(term)
+      );
+      renderTable(filtered);
+    }
+
+    // STATS
+    function updateStats() {
+      document.getElementById('totalCount').textContent = students.length;
+      document.getElementById('capturedCount').textContent = students.filter(s => s.currentStage === 1).length;
+      document.getElementById('paymentCount').textContent = students.filter(s => s.currentStage === 2).length;
+      document.getElementById('educatorCount').textContent = students.filter(s => s.currentStage === 3).length;
+      document.getElementById('readyCount').textContent = students.filter(s => s.currentStage === 4).length;
+      document.getElementById('bookedCount').textContent = students.filter(s => s.currentStage === 5).length;
+      document.getElementById('resultsCount').textContent = students.filter(s => s.currentStage === 6).length;
+    }
+
+    // EXPORT FUNCTIONS
+    function buildExportRows() {
+      const rows = [[
+        'ID Number','First Name','Last Name','Phone','Sales Rep','Branch','Educator','License Code',
+        'Payment Method','Payment Date','Total Fee','Amount Paid','Balance',
+        'Current Stage','Test Result','Test Date','Date Added'
+      ]];
+
+      students.forEach(s => {
+        const stageName = STAGES[s.currentStage]?.name || '';
+        rows.push([
+          s.idNumber || '',
+          s.firstName || '',
+          s.lastName || '',
+          s.phone || '',
+          s.salesRep || '',
+          s.branch || '',
+          s.educator || 'None',
+          s.licenseCode || '',
+          s.paymentMethod || '',
+          s.paymentDate || '',
+          s.totalFee || 0,
+          s.amountPaid || 0,
+          s.balance || 0,
+          stageName,
+          s.testResult || '',
+          s.testResultDate || '',
+          s.dateAdded || ''
+        ]);
+      });
+
+      return rows;
+    }
+
+    function makeWorkbook() {
+      if (!window.XLSX) throw new Error("XLSX library not loaded.");
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(buildExportRows());
+      ws['!cols'] = [
+        {wch:16},{wch:14},{wch:14},{wch:16},{wch:14},{wch:18},{wch:14},{wch:14},
+        {wch:16},{wch:14},{wch:12},{wch:12},{wch:12},
+        {wch:20},{wch:12},{wch:12},{wch:16}
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, "Students");
+      return wb;
+    }
+
+    function exportToExcel() {
+      if (students.length === 0) return alert('No students to export!');
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `Mziyonke_Students_${today}.xlsx`;
+
+      try {
+        const wb = makeWorkbook();
+        XLSX.writeFile(wb, filename);
+        showNotification('✅ Exported .xlsx successfully!');
+      } catch (e) {
+        console.error(e);
+        alert("Export failed. Ensure you are online so the XLSX library can load.");
+      }
+    }
+
+    async function connectSaveFolder() {
+      if (!window.showDirectoryPicker) {
+        alert("Folder saving needs Chrome/Edge (File System Access API). You can still use Export to Excel.");
+        return;
+      }
+
+      try {
+        saveDirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        saveFileHandle = await saveDirHandle.getFileHandle("Mziyonke_Students.xlsx", { create: true });
+        await persistFileHandles();
+        await writeXlsxToFile();
+        showNotification("✅ Folder connected. Auto-save is ON.");
+      } catch (err) {
+        console.error(err);
+        alert("Folder connection cancelled or failed.");
+      }
+    }
+
+    async function writeXlsxToFile() {
+      if (!saveFileHandle) return;
+      let perm = await saveFileHandle.queryPermission({ mode: "readwrite" });
+      if (perm !== "granted") {
+        perm = await saveFileHandle.requestPermission({ mode: "readwrite" });
+        if (perm !== "granted") return;
+      }
+      const wb = makeWorkbook();
+      const arrayBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const writable = await saveFileHandle.createWritable();
+      await writable.write(arrayBuffer);
+      await writable.close();
+    }
+
+    function openHandlesDb() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("mziyonke_fs_handles", 1);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          db.createObjectStore("handles");
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function persistFileHandles() {
+      try {
+        const db = await openHandlesDb();
+        const tx = db.transaction("handles", "readwrite");
+        tx.objectStore("handles").put(saveDirHandle, "saveDirHandle");
+        tx.objectStore("handles").put(saveFileHandle, "saveFileHandle");
+        await new Promise((res, rej) => {
+          tx.oncomplete = () => res();
+          tx.onerror = () => rej(tx.error);
+          tx.onabort = () => rej(tx.error);
+        });
+      } catch (e) {
+        console.warn("Could not persist handles:", e);
+      }
+    }
+
+    async function restoreFileHandles() {
+      try {
+        const db = await openHandlesDb();
+        const tx = db.transaction("handles", "readonly");
+        const store = tx.objectStore("handles");
+        saveDirHandle = await new Promise((res, rej) => {
+          const r = store.get("saveDirHandle");
+          r.onsuccess = () => res(r.result || null);
+          r.onerror = () => rej(r.error);
+        });
+        saveFileHandle = await new Promise((res, rej) => {
+          const r = store.get("saveFileHandle");
+          r.onsuccess = () => res(r.result || null);
+          r.onerror = () => rej(r.error);
+        });
+      } catch (e) {
+        console.warn("Could not restore handles:", e);
+      }
+    }
+
+    // UTILITIES
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function showNotification(msg, type = 'success') {
+      const notif = document.createElement('div');
+      notif.style.cssText = `
+        position:fixed;top:20px;right:20px;
+        background:${type === 'error' ? '#dc3545' : '#28a745'};color:white;
+        padding:15px 25px;border-radius:10px;
+        box-shadow:0 5px 15px rgba(0,0,0,.2);
+        z-index:2000;font-weight:bold;max-width:420px;
+      `;
+      notif.textContent = msg;
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 3500);
+    }
+
+    window.onclick = function(event) {
+      const editModal = document.getElementById('editModal');
+      const detailModal = document.getElementById('detailModal');
+      const testModal = document.getElementById('testResultModal');
+      const outstandingModal = document.getElementById('outstandingModal');
+      
+      if (event.target === editModal) closeEditModal();
+      if (event.target === detailModal) closeModal();
+      if (event.target === testModal) closeTestResultModal();
+      if (event.target === outstandingModal) closeOutstandingModal();
+    };
+  
+    // AUTHENTICATION FUNCTIONS
+    function initUser() {
+      if (window.CURRENT_USER) {
+        document.getElementById('userName').textContent = window.CURRENT_USER.name;
+        document.getElementById('userRole').textContent = window.CURRENT_USER.role.toUpperCase();
+        document.getElementById('userBranch').textContent = window.CURRENT_USER.branch === 'all' ? 'All Branches' : window.CURRENT_USER.branch;
+
+        // Add role-specific styling
+        const roleBadge = document.getElementById('userRole');
+        roleBadge.classList.add('role-' + window.CURRENT_USER.role);
+
+        // Apply role-based restrictions
+        applyRoleRestrictions();
+      }
+    }
+
+    function applyRoleRestrictions() {
+      const user = window.CURRENT_USER;
+
+      // Staff can only see their branch
+      if (user.role === 'staff') {
+        // Auto-select their branch
+        document.getElementById('currentBranch').value = user.branch;
+        currentBranchFilter = user.branch;
+
+        // Disable branch selector
+        document.getElementById('currentBranch').disabled = true;
+
+        // Hide branch filters
+        document.querySelectorAll('.branch-filters').forEach(el => {
+          el.style.display = 'none';
+        });
+
+        // Restrict capture form to their branch only
+        const branchSelect = document.getElementById('branch');
+        if (branchSelect) {
+          Array.from(branchSelect.options).forEach(opt => {
+            if (opt.value && opt.value !== user.branch) {
+              opt.style.display = 'none';
+            }
+          });
+          branchSelect.value = user.branch;
+          branchSelect.disabled = true;
+        }
+
+        showNotification('👋 Welcome ' + user.name + '! You are viewing ' + user.branch + ' branch.');
+      } else if (user.role === 'manager') {
+        showNotification('👋 Welcome Manager! You have full access.');
+      } else if (user.role === 'admin') {
+        showNotification('👋 Welcome Administrator! You have full system access.');
+      }
+    }
+
+    function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('mziyonkeSession');
+        window.location.href = 'index.html';
+      }
+    }
+
+    // SYNC DATA - For remote access (placeholder for backend integration)
+    async function syncData() {
+      showNotification('🔄 Syncing data...');
+
+      // In a real implementation, this would:
+      // 1. Upload local changes to server
+      // 2. Download updates from server
+      // 3. Merge changes
+
+      // For now, just refresh from localStorage
+      setTimeout(() => {
+        refreshAllData();
+        showNotification('✅ Data synced successfully!');
+      }, 1000);
+    }
+
+    // Initialize user on load
+    document.addEventListener('DOMContentLoaded', function() {
+      initUser();
+    });
+
+    // Override saveToStorage to include sync timestamp
+    const originalSaveToStorage = saveToStorage;
+    saveToStorage = function() {
+      originalSaveToStorage();
+
+      // Add sync metadata
+      const syncInfo = {
+        lastModified: new Date().toISOString(),
+        modifiedBy: window.CURRENT_USER ? window.CURRENT_USER.name : 'Unknown',
+        device: navigator.userAgent
+      };
+      localStorage.setItem('mziyonkeSyncInfo', JSON.stringify(syncInfo));
+    };
+
+    // GOOGLE SHEETS SYNC CONFIGURATION
+    const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE'; // Replace with your URL
+
+    // Override refreshAllData to include cloud sync
+    async function syncWithGoogleSheets() {
+      if (GOOGLE_SCRIPT_URL.includes('YOUR_GOOGLE_SCRIPT')) {
+        console.log('Google Sheets not configured yet');
+        return;
+      }
+
+      try {
+        showNotification('☁️ Syncing with cloud...');
+
+        // Upload local data
+        for (const student of students) {
+          await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              ...student,
+              modifiedBy: window.CURRENT_USER ? window.CURRENT_USER.name : 'System'
+            })
+          });
+        }
+
+        showNotification('✅ Cloud sync complete!');
+      } catch (error) {
+        console.error('Sync failed:', error);
+        showNotification('❌ Cloud sync failed', 'error');
+      }
+    }
+
+    // Auto-sync every 5 minutes if online
+    setInterval(() => {
+      if (navigator.onLine && !GOOGLE_SCRIPT_URL.includes('YOUR_GOOGLE_SCRIPT')) {
+        syncWithGoogleSheets();
+      }
+    }, 300000); // 5 minutes
+</script>
+</body>
+</html>
