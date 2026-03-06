@@ -19,8 +19,8 @@ A complete student progress tracking system for driving schools with:
 
 | Role | Username | Password |
 |------|----------|----------|
-| Admin | `admin` | `admin2024` |
-| Manager | `manager` | `manager2024` |
+| Admin | `admin` | `*********` |
+| Manager | `manager` | `*********` |
 | Staff | `goldspot` | `gold2024` |
 
 ### Branches Supported
