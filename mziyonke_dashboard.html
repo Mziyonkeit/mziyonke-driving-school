@@ -1,13 +1,17 @@
 <!DOCTYPE html>
-
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mziyonke Driving School - Dashboard</title>
 
+  <!-- GOOGLE SHEETS SYNC CONFIG -->
+  <script>
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNomq0m8D2t5R0dVcMyWUS0VzEMZTG6B58NDZfJ-0V6evSyNvedEiboRTdUC1fpzDE/exec';
+  </script>
+
   <!-- AUTHENTICATION CHECK - Must be first -->
   <script>
-    // Check if user is logged in
     const sessionData = localStorage.getItem('mziyonkeSession');
     if (!sessionData) {
       window.location.href = 'index.html';
@@ -17,381 +21,77 @@
       const now = new Date();
       const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
 
-      // Logout if session expired (8 hours)
       if (hoursSinceLogin >= 8) {
         localStorage.removeItem('mziyonkeSession');
         window.location.href = 'index.html';
       }
-
-      // Store current user globally
       window.CURRENT_USER = session;
     }
   </script>
 
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mziyonke Driving School - Student Progress Tracker</title>
-
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-
-    body{
-      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
-      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      min-height:100vh;
-      padding:20px;
-    }
-
-    .container{
-      max-width:1400px;
-      margin:0 auto;
-      background:#fff;
-      border-radius:20px;
-      box-shadow:0 20px 60px rgba(0,0,0,.3);
-      overflow:hidden;
-    }
-
-    .header{
-      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      color:#fff;
-      padding:30px;
-      text-align:center;
-    }
-
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
+    .container{max-width:1400px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+    .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:30px;text-align:center}
     .logo-container{margin-bottom:20px}
-
-    .logo{
-      max-height:120px;
-      max-width:300px;
-      border-radius:10px;
-      box-shadow:0 4px 15px rgba(0,0,0,.3);
-      background:#fff;
-      padding:10px;
-    }
-
-    .header h1{
-      font-size:2.5em;
-      margin-bottom:10px;
-      text-shadow:2px 2px 4px rgba(0,0,0,.2);
-    }
-
-    .branch-selector{
-      margin-top:15px;
-      padding:10px;
-      background:rgba(255,255,255,.2);
-      border-radius:10px;
-      display:inline-block;
-    }
-
+    .logo{max-height:120px;max-width:300px;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.3);background:#fff;padding:10px}
+    .header h1{font-size:2.5em;margin-bottom:10px;text-shadow:2px 2px 4px rgba(0,0,0,.2)}
+    .branch-selector{margin-top:15px;padding:10px;background:rgba(255,255,255,.2);border-radius:10px;display:inline-block}
     .branch-selector label{font-weight:bold;margin-right:10px}
-
-    .branch-selector select{
-      padding:8px 15px;
-      border-radius:5px;
-      border:none;
-      font-size:1em;
-      cursor:pointer;
-    }
-
-    .stage-legend{
-      display:flex;
-      justify-content:center;
-      gap:15px;
-      margin-top:20px;
-      flex-wrap:wrap;
-    }
-
-    .legend-item{
-      display:flex;
-      align-items:center;
-      gap:5px;
-      padding:8px 12px;
-      background:rgba(255,255,255,.15);
-      border-radius:20px;
-      font-size:.9em;
-    }
-
+    .branch-selector select{padding:8px 15px;border-radius:5px;border:none;font-size:1em;cursor:pointer}
+    .stage-legend{display:flex;justify-content:center;gap:15px;margin-top:20px;flex-wrap:wrap}
+    .legend-item{display:flex;align-items:center;gap:5px;padding:8px 12px;background:rgba(255,255,255,.15);border-radius:20px;font-size:.9em}
     .legend-color{width:12px;height:12px;border-radius:50%}
-
     .content{padding:30px}
-
-    /* --- TOP DISPLAY: Codes & Prices --- */
-    .pricing-wrap{
-      border:2px solid #3182ce;
-      border-radius:12px;
-      padding:14px;
-      margin-bottom:18px;
-      background:#f7fbff;
-    }
-
-    .pricing-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-      gap:14px;
-    }
-
-    .pricing-card{
-      background:#fff;
-      border-radius:12px;
-      padding:18px;
-      box-shadow:0 5px 15px rgba(0,0,0,.08);
-      text-align:center;
-    }
-
-    .pricing-title{
-      font-weight:700;
-      color:#4c51bf;
-      margin-bottom:10px;
-    }
-
-    .pricing-price{
-      font-size:2em;
-      font-weight:800;
-      color:#111827;
-      margin-bottom:10px;
-    }
-
-    .pricing-deposit{
-      color:#16a34a;
-      font-weight:700;
-      margin-bottom:6px;
-    }
-
-    .pricing-balance{
-      color:#dc2626;
-      font-weight:700;
-    }
-
-    /* NUPAY INFO */
-    .nupay-info{
-      background:#e8f5e9;
-      border:2px solid #4caf50;
-      padding:15px;
-      border-radius:10px;
-      margin-bottom:20px;
-    }
-
-    .nupay-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:15px;
-    }
-
-    .nupay-card{
-      background:#fff;
-      padding:15px;
-      border-radius:8px;
-      text-align:center;
-      box-shadow:0 2px 5px rgba(0,0,0,.1);
-    }
-
-    .nupay-title{
-      color:#4caf50;
-      font-weight:700;
-      margin-bottom:10px;
-    }
-
-    .nupay-amount{
-      font-size:1.3em;
-      font-weight:bold;
-      color:#4caf50;
-    }
-
-    /* DASHBOARD STATS */
-    .dashboard{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-      gap:15px;
-      margin-bottom:30px;
-    }
-
-    .stat-card{
-      background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);
-      padding:20px;
-      border-radius:15px;
-      text-align:center;
-      box-shadow:0 5px 15px rgba(0,0,0,.1);
-      transition:transform .3s;
-    }
-
+    .pricing-wrap{border:2px solid #3182ce;border-radius:12px;padding:14px;margin-bottom:18px;background:#f7fbff}
+    .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .pricing-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 5px 15px rgba(0,0,0,.08);text-align:center}
+    .pricing-title{font-weight:700;color:#4c51bf;margin-bottom:10px}
+    .pricing-price{font-size:2em;font-weight:800;color:#111827;margin-bottom:10px}
+    .pricing-deposit{color:#16a34a;font-weight:700;margin-bottom:6px}
+    .pricing-balance{color:#dc2626;font-weight:700}
+    .nupay-info{background:#e8f5e9;border:2px solid #4caf50;padding:15px;border-radius:10px;margin-bottom:20px}
+    .nupay-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px}
+    .nupay-card{background:#fff;padding:15px;border-radius:8px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+    .nupay-title{color:#4caf50;font-weight:700;margin-bottom:10px}
+    .nupay-amount{font-size:1.3em;font-weight:bold;color:#4caf50}
+    .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:30px}
+    .stat-card{background:linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%);padding:20px;border-radius:15px;text-align:center;box-shadow:0 5px 15px rgba(0,0,0,.1);transition:transform .3s}
     .stat-card:hover{transform:translateY(-5px)}
-
     .stat-number{font-size:2em;font-weight:bold;color:#667eea}
     .stat-label{margin-top:5px;color:#666;font-size:.9em}
-
-    /* FINANCIAL SUMMARY */
-    .financial-summary{
-      background:linear-gradient(135deg,#84fab0 0%,#8fd3f4 100%);
-      padding:25px;
-      border-radius:15px;
-      margin-bottom:30px;
-      box-shadow:0 5px 15px rgba(0,0,0,.1);
-    }
-
-    .financial-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:20px;
-    }
-
-    .financial-item{text-align:center}
+    .financial-summary{background:linear-gradient(135deg,#84fab0 0%,#8fd3f4 100%);padding:25px;border-radius:15px;margin-bottom:30px;box-shadow:0 5px 15px rgba(0,0,0,.1)}
+    .financial-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px}
+    .financial-card{background:rgba(255,255,255,.15);padding:20px;border-radius:10px;text-align:center;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2)}
+    .financial-card.highlight{background:rgba(220,53,69,.3);border:2px solid #dc3545}
+    .financial-card.warning{background:rgba(255,193,7,.3);border:2px solid #ffc107}
     .financial-amount{font-size:2em;font-weight:bold;color:#2c3e50}
     .financial-label{color:#34495e;margin-top:5px}
-
-    .financial-card{
-      background:rgba(255,255,255,.15);
-      padding:20px;
-      border-radius:10px;
-      text-align:center;
-      backdrop-filter:blur(10px);
-      border:1px solid rgba(255,255,255,.2);
-    }
-
-    .financial-card.highlight{
-      background:rgba(220,53,69,.3);
-      border:2px solid #dc3545;
-    }
-
-    .financial-card.warning{
-      background:rgba(255,193,7,.3);
-      border:2px solid #ffc107;
-    }
-
-    .financial-card.success{
-      background:rgba(40,167,69,.3);
-      border:2px solid #28a745;
-    }
-
-    /* INPUT SECTION */
-    .input-section{
-      background:#f8f9fa;
-      padding:25px;
-      border-radius:15px;
-      margin-bottom:30px;
-      border-left:5px solid #667eea;
-    }
-
-    .form-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-      gap:15px;
-      margin-bottom:20px;
-    }
-
+    .input-section{background:#f8f9fa;padding:25px;border-radius:15px;margin-bottom:30px;border-left:5px solid #667eea}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-bottom:20px}
     .form-group{display:flex;flex-direction:column}
-    .form-group label{
-      font-weight:600;
-      color:#555;
-      margin-bottom:8px;
-      font-size:.9em;
-      text-transform:uppercase;
-      letter-spacing:.5px;
-    }
-    .form-group input,.form-group select,.form-group textarea{
-      padding:12px;
-      border:2px solid #e0e0e0;
-      border-radius:8px;
-      font-size:1em;
-      transition:all .3s;
-    }
-    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{
-      outline:none;
-      border-color:#667eea;
-      box-shadow:0 0 0 3px rgba(102,126,234,.1);
-    }
-
-    .primary-key input{
-      border:2px solid #dc3545;
-      background:#fff5f5;
-    }
-    .primary-key-label{
-      color:#dc3545 !important;
-      font-weight:bold !important;
-    }
-
-    .duplicate-warning{
-      background:#f8d7da;
-      color:#721c24;
-      padding:10px;
-      border-radius:5px;
-      margin-top:5px;
-      font-size:.9em;
-      display:none;
-      border-left:4px solid #dc3545;
-    }
+    .form-group label{font-weight:600;color:#555;margin-bottom:8px;font-size:.9em;text-transform:uppercase;letter-spacing:.5px}
+    .form-group input,.form-group select,.form-group textarea{padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:1em;transition:all .3s}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.1)}
+    .primary-key input{border:2px solid #dc3545;background:#fff5f5}
+    .primary-key-label{color:#dc3545 !important;font-weight:bold !important}
+    .duplicate-warning{background:#f8d7da;color:#721c24;padding:10px;border-radius:5px;margin-top:5px;font-size:.9em;display:none;border-left:4px solid #dc3545}
     .duplicate-warning.show{display:block;animation:shake .5s}
-
-    @keyframes shake{
-      0%,100%{transform:translateX(0)}
-      25%{transform:translateX(-5px)}
-      75%{transform:translateX(5px)}
-    }
-
-    .check-icon{
-      color:#28a745;
-      margin-left:8px;
-      display:none;
-    }
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    .check-icon{color:#28a745;margin-left:8px;display:none}
     .check-icon.show{display:inline}
-
-    /* PAYMENT METHOD BOXES */
-    .payment-method-box{
-      background:#e3f2fd;
-      border:2px solid #2196f3;
-      padding:15px;
-      border-radius:10px;
-      margin-bottom:15px;
-      display:none;
-    }
-
-    .stage-selector{
-      background:#fff3cd;
-      border:2px solid #ffc107;
-      padding:20px;
-      border-radius:10px;
-      margin-bottom:20px;
-    }
-
-    .button-group{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    button{
-      padding:12px 24px;
-      border:none;
-      border-radius:8px;
-      font-size:1em;
-      font-weight:600;
-      cursor:pointer;
-      transition:all .3s;
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-    button:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-    }
-
+    .payment-method-box{background:#e3f2fd;border:2px solid #2196f3;padding:15px;border-radius:10px;margin-bottom:15px;display:none}
+    .stage-selector{background:#fff3cd;border:2px solid #ffc107;padding:20px;border-radius:10px;margin-bottom:20px}
+    .button-group{display:flex;gap:10px;flex-wrap:wrap}
+    button{padding:12px 24px;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:8px}
+    button:disabled{opacity:.6;cursor:not-allowed}
     .btn-primary{background:#667eea;color:#fff}
     .btn-primary:hover:not(:disabled){background:#5a67d8;transform:translateY(-2px);box-shadow:0 5px 20px rgba(102,126,234,.4)}
     .btn-success{background:#48bb78;color:#fff}
     .btn-success:hover{background:#38a169;transform:translateY(-2px)}
     .btn-danger{background:#f56565;color:#fff}
     .btn-delete{background:#dc3545;color:#fff;font-size:.8em;padding:6px 12px;cursor:pointer;position:relative;z-index:10}
-    .view-only-indicator {
-      background:#e9ecef;
-      color:#6c757d;
-      padding:15px;
-      border-radius:10px;
-      text-align:center;
-      margin-bottom:20px;
-      border-left:4px solid #17a2b8;
-    }
     .btn-delete:hover{background:#c82333;transform:translateY(-2px)}
     .btn-danger:hover{background:#e53e3e;transform:translateY(-2px)}
     .btn-warning{background:#ed8936;color:#fff}
@@ -409,426 +109,87 @@
     .btn-edit{background:#17a2b8;color:#fff}
     .btn-refresh{background:#6c757d;color:#fff}
     .btn-refresh:hover{background:#5a6268;transform:translateY(-2px)}
-
-    /* REFRESH BUTTON ANIMATION */
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .refreshing {
-      animation: spin 1s linear infinite;
-      will-change: transform;
-    }
-
-    /* FILTERS */
-    .filters-section{
-      display:flex;
-      gap:15px;
-      margin-bottom:20px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    .refreshing{animation:spin 1s linear infinite;will-change:transform}
+    .filters-section{display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
     .search-box{flex:1;min-width:250px}
-    .search-box input{
-      width:100%;
-      padding:12px 40px 12px 15px;
-      border:2px solid #e0e0e0;
-      border-radius:25px;
-      font-size:1em;
-    }
-
-    .filter-buttons{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:20px;
-    }
-
-    .filter-btn{
-      padding:8px 16px;
-      border:2px solid #dee2e6;
-      background:#fff;
-      border-radius:20px;
-      cursor:pointer;
-      font-size:.9em;
-      transition:all .3s;
-    }
-    .filter-btn.active{
-      background:#667eea;
-      color:#fff;
-      border-color:#667eea;
-    }
-
-    .branch-filters{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:20px;
-      padding:15px;
-      background:#f8f9fa;
-      border-radius:10px;
-      align-items:center;
-    }
-
-    .branch-filter-btn{
-      padding:8px 16px;
-      border:2px solid #667eea;
-      background:#fff;
-      color:#667eea;
-      border-radius:20px;
-      cursor:pointer;
-      font-size:.9em;
-      transition:all .3s;
-    }
-    .branch-filter-btn.active{
-      background:#667eea;
-      color:#fff;
-    }
-
-    /* EDUCATOR VIEW FILTERS */
-    .educator-filters{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:20px;
-      padding:15px;
-      background:#e8f5e9;
-      border-radius:10px;
-      border:2px solid #4caf50;
-      align-items:center;
-    }
-
-    .educator-filter-label{
-      font-weight:bold;
-      color:#4caf50;
-      margin-right:10px;
-    }
-
-    .educator-filter-btn{
-      padding:8px 16px;
-      border:2px solid #4caf50;
-      background:#fff;
-      color:#4caf50;
-      border-radius:20px;
-      cursor:pointer;
-      font-size:.9em;
-      transition:all .3s;
-    }
-    .educator-filter-btn.active{
-      background:#4caf50;
-      color:#fff;
-    }
-
-    /* TABLE */
-    .table-container{
-      overflow-x:auto;
-      border-radius:10px;
-      box-shadow:0 2px 10px rgba(0,0,0,.1);
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      background:#fff;
-    }
-
-    thead{
-      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-      color:#fff;
-    }
-
-    th{
-      padding:15px;
-      text-align:left;
-      font-weight:600;
-      text-transform:uppercase;
-      font-size:.85em;
-      letter-spacing:.5px;
-      position:sticky;
-      top:0;
-      z-index:10;
-    }
-
-    td{
-      padding:15px;
-      border-bottom:1px solid #eee;
-    }
-
+    .search-box input{width:100%;padding:12px 40px 12px 15px;border:2px solid #e0e0e0;border-radius:25px;font-size:1em}
+    .filter-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .filter-btn{padding:8px 16px;border:2px solid #dee2e6;background:#fff;border-radius:20px;cursor:pointer;font-size:.9em;transition:all .3s}
+    .filter-btn.active{background:#667eea;color:#fff;border-color:#667eea}
+    .branch-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;padding:15px;background:#f8f9fa;border-radius:10px;align-items:center}
+    .branch-filter-btn{padding:8px 16px;border:2px solid #667eea;background:#fff;color:#667eea;border-radius:20px;cursor:pointer;font-size:.9em;transition:all .3s}
+    .branch-filter-btn.active{background:#667eea;color:#fff}
+    .educator-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;padding:15px;background:#e8f5e9;border-radius:10px;border:2px solid #4caf50;align-items:center}
+    .educator-filter-label{font-weight:bold;color:#4caf50;margin-right:10px}
+    .educator-filter-btn{padding:8px 16px;border:2px solid #4caf50;background:#fff;color:#4caf50;border-radius:20px;cursor:pointer;font-size:.9em;transition:all .3s}
+    .educator-filter-btn.active{background:#4caf50;color:#fff}
+    .table-container{overflow-x:auto;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+    table{width:100%;border-collapse:collapse;background:#fff}
+    thead{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+    th{padding:15px;text-align:left;font-weight:600;text-transform:uppercase;font-size:.85em;letter-spacing:.5px;position:sticky;top:0;z-index:10}
+    td{padding:15px;border-bottom:1px solid #eee}
     tr:hover{background:#f8f9fa}
-
-    .stage-badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:6px 12px;
-      border-radius:20px;
-      font-size:.85em;
-      font-weight:600;
-      color:#fff;
-      white-space:nowrap;
-    }
-
+    .stage-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;font-size:.85em;font-weight:600;color:#fff;white-space:nowrap}
     .stage-1{background:#6c757d}
     .stage-2{background:#ffc107;color:#000}
     .stage-3{background:#17a2b8}
     .stage-4{background:#fd7e14}
     .stage-5{background:#28a745}
     .stage-6{background:#6f42c1}
-
-    .sales-rep-tag{
-      display:inline-block;
-      padding:3px 8px;
-      background:#6f42c1;
-      color:#fff;
-      border-radius:10px;
-      font-size:.75em;
-      font-weight:600;
-    }
-
-    .payment-badge{
-      display:inline-block;
-      padding:4px 10px;
-      border-radius:12px;
-      font-size:.8em;
-      font-weight:600;
-    }
-
+    .sales-rep-tag{display:inline-block;padding:3px 8px;background:#6f42c1;color:#fff;border-radius:10px;font-size:.75em;font-weight:600}
+    .payment-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:.8em;font-weight:600}
     .payment-complete{background:#d4edda;color:#155724}
     .payment-partial{background:#fff3cd;color:#856404}
     .payment-unpaid{background:#f8d7da;color:#721c24}
-
-    .payment-method-tag{
-      display:inline-block;
-      padding:3px 8px;
-      border-radius:10px;
-      font-size:.75em;
-      font-weight:600;
-      margin-left:5px;
-    }
-
+    .payment-method-tag{display:inline-block;padding:3px 8px;border-radius:10px;font-size:.75em;font-weight:600;margin-left:5px}
     .method-cash{background:#28a745;color:#fff}
     .method-eft{background:#17a2b8;color:#fff}
     .method-nupay{background:#4caf50;color:#fff}
     .method-yoco{background:#ff6b35;color:#fff}
     .method-card{background:#6c757d;color:#fff}
-
-    .test-result-passed{
-      background:#d4edda;
-      color:#155724;
-      padding:4px 10px;
-      border-radius:12px;
-      font-size:.8em;
-      font-weight:600;
-    }
-
-    .test-result-failed{
-      background:#f8d7da;
-      color:#721c24;
-      padding:4px 10px;
-      border-radius:12px;
-      font-size:.8em;
-      font-weight:600;
-    }
-
-    .test-result-pending{
-      background:#fff3cd;
-      color:#856404;
-      padding:4px 10px;
-      border-radius:12px;
-      font-size:.8em;
-      font-weight:600;
-    }
-
-    .action-buttons{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-
-    .action-btn{
-      padding:6px 12px;
-      font-size:.85em;
-      border-radius:5px;
-    }
-
-    /* MODALS */
-    .modal{
-      display:none;
-      position:fixed;
-      z-index:1000;
-      left:0;top:0;
-      width:100%;height:100%;
-      background:rgba(0,0,0,.5);
-      justify-content:center;
-      align-items:center;
-    }
-
-    .modal-content{
-      background:#fff;
-      padding:30px;
-      border-radius:15px;
-      width:90%;
-      max-width:700px;
-      max-height:85vh;
-      overflow-y:auto;
-      animation:slideIn .3s;
-    }
-
+    .test-result-passed{background:#d4edda;color:#155724;padding:4px 10px;border-radius:12px;font-size:.8em;font-weight:600}
+    .test-result-failed{background:#f8d7da;color:#721c24;padding:4px 10px;border-radius:12px;font-size:.8em;font-weight:600}
+    .test-result-pending{background:#fff3cd;color:#856404;padding:4px 10px;border-radius:12px;font-size:.8em;font-weight:600}
+    .action-buttons{display:flex;gap:8px;flex-wrap:wrap}
+    .action-btn{padding:6px 12px;font-size:.85em;border-radius:5px}
+    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center}
+    .modal-content{background:#fff;padding:30px;border-radius:15px;width:90%;max-width:700px;max-height:85vh;overflow-y:auto;animation:slideIn .3s}
     .modal-content.wide{max-width:900px}
-
-    @keyframes slideIn{
-      from{transform:translateY(-50px);opacity:0}
-      to{transform:translateY(0);opacity:1}
-    }
-
-    .modal-header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:20px;
-      padding-bottom:15px;
-      border-bottom:2px solid #eee;
-    }
-
-    .close{
-      font-size:1.5em;
-      cursor:pointer;
-      color:#999;
-    }
+    @keyframes slideIn{from{transform:translateY(-50px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #eee}
+    .close{font-size:1.5em;cursor:pointer;color:#999}
     .close:hover{color:#333}
-
-    /* STAGE TIMELINE */
-    .stage-timeline{
-      display:flex;
-      flex-direction:column;
-      gap:15px;
-      margin:20px 0;
-    }
-
-    .timeline-item{
-      display:flex;
-      align-items:center;
-      gap:15px;
-      padding:15px;
-      background:#f8f9fa;
-      border-radius:10px;
-      border-left:4px solid #dee2e6;
-    }
-
-    .timeline-item.completed{
-      border-left-color:#28a745;
-      background:#d4edda;
-    }
-
-    .timeline-item.current{
-      border-left-color:#ffc107;
-      background:#fff3cd;
-      font-weight:600;
-    }
-
-    .timeline-item.failed{
-      border-left-color:#dc3545;
-      background:#f8d7da;
-    }
-
-    .timeline-item.pending{
-      border-left-color:#ffc107;
-      background:#fff3cd;
-    }
-
-    .timeline-number{
-      width:30px;
-      height:30px;
-      border-radius:50%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:bold;
-      color:#fff;
-      font-size:.9em;
-    }
-
-    /* EDIT FORM */
-    .edit-form-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:15px;
-      margin-bottom:15px;
-    }
-
-    .edit-form-group{
-      display:flex;
-      flex-direction:column;
-    }
-
-    .edit-form-group label{
-      font-weight:600;
-      color:#555;
-      margin-bottom:5px;
-      font-size:.85em;
-    }
-
-    .edit-form-group input,
-    .edit-form-group select{
-      padding:8px;
-      border:2px solid #e0e0e0;
-      border-radius:5px;
-      font-size:.9em;
-    }
-
-    /* PAYMENT HISTORY */
-    .payment-history{
-      background:#f5f5f5;
-      padding:15px;
-      border-radius:8px;
-      margin-top:10px;
-      max-height:150px;
-      overflow-y:auto;
-    }
-
-    .payment-record{
-      display:flex;
-      justify-content:space-between;
-      padding:8px;
-      background:#fff;
-      margin-bottom:5px;
-      border-radius:5px;
-      font-size:.9em;
-    }
-
-    /* DATA STATUS INDICATOR */
-    .data-status{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 16px;
-      background:#e8f5e9;
-      border-radius:20px;
-      font-size:.9em;
-      color:#28a745;
-      font-weight:600;
-    }
-    .data-status.empty{
-      background:#f8d7da;
-      color:#dc3545;
-    }
-
+    .stage-timeline{display:flex;flex-direction:column;gap:15px;margin:20px 0}
+    .timeline-item{display:flex;align-items:center;gap:15px;padding:15px;background:#f8f9fa;border-radius:10px;border-left:4px solid #dee2e6}
+    .timeline-item.completed{border-left-color:#28a745;background:#d4edda}
+    .timeline-item.current{border-left-color:#ffc107;background:#fff3cd;font-weight:600}
+    .timeline-item.failed{border-left-color:#dc3545;background:#f8d7da}
+    .timeline-item.pending{border-left-color:#ffc107;background:#fff3cd}
+    .timeline-number{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;font-size:.9em}
+    .edit-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:15px}
+    .edit-form-group{display:flex;flex-direction:column}
+    .edit-form-group label{font-weight:600;color:#555;margin-bottom:5px;font-size:.85em}
+    .edit-form-group input,.edit-form-group select{padding:8px;border:2px solid #e0e0e0;border-radius:5px;font-size:.9em}
+    .payment-history{background:#f5f5f5;padding:15px;border-radius:8px;margin-top:10px;max-height:150px;overflow-y:auto}
+    .payment-record{display:flex;justify-content:space-between;padding:8px;background:#fff;margin-bottom:5px;border-radius:5px;font-size:.9em}
+    .data-status{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#e8f5e9;border-radius:20px;font-size:.9em;color:#28a745;font-weight:600}
+    .data-status.empty{background:#f8d7da;color:#dc3545}
     .hidden{display:none !important}
+    @media print{body{background:#fff}.no-print{display:none !important}.container{box-shadow:none}}
+    .btn-sync{background:#17a2b8;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer}
+    .btn-sync:hover{background:#138496}
+    .btn-logout{background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer}
+    .btn-logout:hover{background:#c82333}
+    .role-admin{background:#dc3545}
+    .role-manager{background:#28a745}
+    .role-staff{background:#17a2b8}
+    .view-only-indicator{background:#e9ecef;color:#6c757d;padding:15px;border-radius:10px;text-align:center;margin-bottom:20px;border-left:4px solid #17a2b8}
+    .sync-status{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#e3f2fd;border-radius:20px;font-size:.9em;color:#1976d2;font-weight:600;margin-left:10px}
+    .sync-status.syncing{background:#fff3cd;color:#f57c00}
+    .sync-status.error{background:#ffebee;color:#c62828}
+  </style>
 
-    @media print{
-      body{background:#fff}
-      .no-print{display:none !important}
-      .container{box-shadow:none}
-    }
-      .btn-sync:hover { background:#138496; }
-    .btn-logout:hover { background:#c82333; }
-    .role-admin { background:#dc3545; }
-    .role-manager { background:#28a745; }
-    .role-staff { background:#17a2b8; }
-</style>
-
-  <!-- SheetJS for real .xlsx export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 
@@ -836,21 +197,24 @@
   <div class="container">
     <div class="header">
       <div class="logo-container">
-        <img class="logo" src="" alt="Logo" style="display:none;" alt="Mziyonke Driving School Logo" onerror="this.style.display='none'"/>
+        <img class="logo" src="" alt="Logo" style="display:none;" onerror="this.style.display='none'"/>
       </div>
-  <!-- USER INFO BAR -->
-  <div style="background:#2c3e50;color:white;padding:10px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-    <div style="display:flex;align-items:center;gap:15px;">
-      <span>👤 <strong id="userName">Loading...</strong></span>
-      <span id="userRole" class="role-badge" style="padding:3px 10px;border-radius:12px;font-size:0.8em;">Role</span>
-      <span id="userBranch">Branch</span>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <button onclick="syncData()" class="btn-sync" style="background:#17a2b8;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;">🔄 Sync Data</button>
-      <button onclick="logout()" class="btn-logout" style="background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;">🚪 Logout</button>
-    </div>
-  </div>
-
+      
+      <div style="background:#2c3e50;color:white;padding:10px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:15px;">
+          <span>👤 <strong id="userName">Loading...</strong></span>
+          <span id="userRole" class="role-badge" style="padding:3px 10px;border-radius:12px;font-size:0.8em;">Role</span>
+          <span id="userBranch">Branch</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <div id="syncStatus" class="sync-status" style="display:none;">
+            <span id="syncIcon">☁️</span>
+            <span id="syncText">Synced</span>
+          </div>
+          <button onclick="syncData()" class="btn-sync">🔄 Sync Now</button>
+          <button onclick="logout()" class="btn-logout">🚪 Logout</button>
+        </div>
+      </div>
 
       <h1>Student Progress Tracker</h1>
       <p>Manage your driving school students through all 6 stages</p>
@@ -878,13 +242,11 @@
     </div>
 
     <div class="content">
-      <!-- VIEW ONLY NOTICE -->
       <div id="viewOnlyNotice" class="view-only-indicator" style="display:none;">
         <strong>👁️ VIEW ONLY MODE</strong><br>
         <span id="viewOnlyText">You can view data but cannot make changes. Contact an administrator for modifications.</span>
       </div>
 
-      <!-- PRICING INFO -->
       <div class="pricing-wrap">
         <div class="pricing-grid">
           <div class="pricing-card">
@@ -908,7 +270,6 @@
         </div>
       </div>
 
-      <!-- NUPAY INFO -->
       <div class="nupay-info no-print">
         <h3 style="color:#4caf50;margin-bottom:15px;">💳 Nupay Monthly Debit Options</h3>
         <div class="nupay-grid">
@@ -925,7 +286,6 @@
         </div>
       </div>
 
-      <!-- REFRESH & DATA STATUS BAR -->
       <div class="no-print" style="background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
         <div style="display:flex;align-items:center;gap:15px;">
           <button class="btn-refresh" id="refreshBtn" onclick="refreshAllData()" title="Reload all data from storage">
@@ -941,7 +301,6 @@
         </div>
       </div>
 
-      <!-- FINANCIAL SUMMARY -->
       <div class="financial-summary no-print">
         <h2 style="text-align:center;margin-bottom:20px;">💰 Financial Summary</h2>
         <div class="financial-grid" style="grid-template-columns: repeat(2, 1fr); max-width: 600px; margin: 0 auto;">
@@ -959,7 +318,6 @@
         </div>
       </div>
 
-      <!-- DASHBOARD STATS -->
       <div class="dashboard">
         <div class="stat-card">
           <div class="stat-number" id="totalCount">0</div>
@@ -991,13 +349,11 @@
         </div>
       </div>
 
-      <!-- INPUT SECTION -->
       <div class="input-section no-print" id="captureSection">
         <h2 style="margin-bottom:20px;color:#333;">📝 Capture New Student</h2>
 
         <form id="studentForm" onsubmit="event.preventDefault(); addStudent();">
           <div class="form-grid">
-            <!-- ID NUMBER -->
             <div class="form-group primary-key">
               <label class="primary-key-label">ID Number (Primary Key) * 🔑</label>
               <div style="position:relative;">
@@ -1024,7 +380,6 @@
               <input type="email" id="email" placeholder="john@example.com">
             </div>
 
-            <!-- SALES REP NAME -->
             <div class="form-group">
               <label>Sales Rep Name *</label>
               <input type="text" id="salesRep" required placeholder="e.g., John Smith">
@@ -1038,7 +393,7 @@
                 <option value="Chris Hani">Chris Hani</option>
                 <option value="Bara">Bara</option>
                 <option value="Protea Glen">Protea Glen</option>
-              <option value="Dawn Park">Dawn Park</option>
+                <option value="Dawn Park">Dawn Park</option>
               </select>
             </div>
 
@@ -1052,7 +407,6 @@
               </select>
             </div>
 
-            <!-- PAYMENT METHOD - 4 OPTIONS -->
             <div class="form-group">
               <label>Payment Method *</label>
               <select id="paymentMethod" required onchange="updatePaymentMethod()">
@@ -1064,7 +418,6 @@
               </select>
             </div>
 
-            <!-- PAYMENT DATE -->
             <div class="form-group">
               <label>Payment Date * 📅</label>
               <input type="date" id="paymentDate" required>
@@ -1093,7 +446,6 @@
             </div>
           </div>
 
-          <!-- NUPAY DETAILS -->
           <div id="nupayDetails" class="payment-method-box">
             <h4 style="color:#4caf50;margin-bottom:10px;">🔄 Nupay Debit Order Details</h4>
             <div class="form-grid">
@@ -1116,7 +468,6 @@
             </div>
           </div>
 
-          <!-- YOCO DETAILS -->
           <div id="yocoDetails" class="payment-method-box" style="border-color:#ff6b35;background:#fff3e0;">
             <h4 style="color:#ff6b35;margin-bottom:10px;">💳 Yoco Card Payment Details</h4>
             <div class="form-grid">
@@ -1160,7 +511,6 @@
         </form>
       </div>
 
-      <!-- SEARCH & FILTERS -->
       <div class="filters-section no-print" style="flex-wrap:wrap;gap:10px;">
         <div class="search-box">
           <input type="text" id="searchInput" placeholder="Search by name, ID, phone, branch, or sales rep..." oninput="searchStudents()">
@@ -1169,7 +519,6 @@
         <button class="btn-info" onclick="connectSaveFolder()">📁 Connect Folder</button>
       </div>
 
-      <!-- BRANCH FILTERS -->
       <div class="branch-filters no-print">
         <span style="font-weight:bold;color:#555;margin-right:10px;">Filter by Branch:</span>
         <div class="branch-filter-btn active" onclick="filterByBranch('all', this)">All Branches</div>
@@ -1180,7 +529,6 @@
         <div class="branch-filter-btn" onclick="filterByBranch('Dawn Park', this)">Dawn Park</div>
       </div>
 
-      <!-- STAGE FILTERS -->
       <div class="filter-buttons no-print">
         <button class="filter-btn active" onclick="filterByStage('all')">All Students</button>
         <button class="filter-btn" onclick="filterByStage('1')" style="background:#6c757d;color:#fff;">Captured</button>
@@ -1191,7 +539,6 @@
         <button class="filter-btn" onclick="filterByStage('6')" style="background:#6f42c1;color:#fff;">Test Results</button>
       </div>
 
-      <!-- EDUCATOR VIEW FILTERS -->
       <div class="educator-filters no-print">
         <span class="educator-filter-label">👨‍🏫 Educator View:</span>
         <div class="educator-filter-btn" onclick="filterByEducatorStatus('active', this)">Active Students</div>
@@ -1199,7 +546,6 @@
         <div class="educator-filter-btn" onclick="filterByEducatorStatus('failed', this)">Failed/Re-testing</div>
       </div>
 
-      <!-- STUDENTS TABLE -->
       <div class="table-container">
         <table id="studentsTable">
           <thead>
@@ -1223,7 +569,6 @@
     </div>
   </div>
 
-  <!-- STUDENT DETAILS MODAL -->
   <div id="detailModal" class="modal" onclick="closeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">
@@ -1238,7 +583,6 @@
     </div>
   </div>
 
-  <!-- EDIT STUDENT MODAL -->
   <div id="editModal" class="modal" onclick="closeEditModal(event)">
     <div class="modal-content wide" onclick="event.stopPropagation()">
       <div class="modal-header">
@@ -1339,7 +683,6 @@
     </div>
   </div>
 
-  <!-- TEST RESULTS MODAL -->
   <div id="testResultModal" class="modal" onclick="closeTestResultModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">
@@ -1399,7 +742,6 @@
     </div>
   </div>
 
-  <!-- OUTSTANDING BALANCE REPORT MODAL -->
   <div id="outstandingModal" class="modal" onclick="closeOutstandingModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()" style="max-width:900px;">
       <div class="modal-header">
@@ -1447,6 +789,26 @@
     let isDuplicateId = false;
     let saveDirHandle = null;
     let saveFileHandle = null;
+    let isSyncing = false;
+
+    // PERMISSIONS
+    const PERMISSIONS = {
+      admin: {
+        canView: true, canAdd: true, canEdit: true, canDelete: true,
+        canExport: true, canViewReports: true, canModifyProgress: true,
+        branches: 'all', label: 'Administrator'
+      },
+      manager: {
+        canView: true, canAdd: false, canEdit: false, canDelete: false,
+        canExport: true, canViewReports: true, canModifyProgress: false,
+        branches: 'all', label: 'Manager (View Only)'
+      },
+      staff: {
+        canView: true, canAdd: false, canEdit: false, canDelete: false,
+        canExport: false, canViewReports: false, canModifyProgress: false,
+        branches: 'assigned', label: 'Staff (View Only)'
+      }
+    };
 
     // INIT
     document.addEventListener('DOMContentLoaded', function() {
@@ -1457,51 +819,228 @@
         radio.addEventListener('change', updateTestResultInfo);
       });
 
-      // Load data on startup
-      refreshAllData();
+      initUser();
+      loadFromGoogleSheets(); // Load from cloud first
     });
 
-    // REFRESH FUNCTION - Reloads everything from localStorage
+    // GOOGLE SHEETS SYNC FUNCTIONS
+    async function loadFromGoogleSheets() {
+      updateSyncStatus('syncing', 'Loading from cloud...');
+      
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getAll');
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          // Convert array data to student objects
+          students = data.map(row => ({
+            id: row.id || Date.now().toString(36) + Math.random().toString(36).substr(2),
+            firstName: row.firstName || '',
+            lastName: row.lastName || '',
+            idNumber: row.idNumber || '',
+            phone: row.phone || '',
+            email: row.email || '',
+            salesRep: row.salesRep || '',
+            branch: row.branch || 'Gold Spot',
+            licenseCode: row.licenseCode || 'Code 8',
+            totalFee: parseFloat(row.totalFee) || 0,
+            amountPaid: parseFloat(row.amountPaid) || 0,
+            balance: parseFloat(row.balance) || 0,
+            paymentMethod: row.paymentMethod || 'Cash',
+            paymentDate: row.paymentDate || '',
+            currentStage: parseInt(row.currentStage) || 1,
+            testResult: row.testResult || null,
+            educator: row.educator || null,
+            dateAdded: row.dateAdded || new Date().toLocaleString()
+          }));
+          
+          // Save to localStorage as backup
+          localStorage.setItem('mziyonkeStudents', JSON.stringify(students));
+          
+          updateDataStatus(true, students.length);
+          updateStats();
+          updateFinancialSummary();
+          renderTable();
+          
+          updateSyncStatus('synced', `☁️ ${students.length} students synced`);
+          showNotification('✅ Data loaded from cloud!');
+        } else {
+          // No data in cloud, try localStorage
+          const stored = localStorage.getItem('mziyonkeStudents');
+          if (stored) {
+            students = JSON.parse(stored);
+            updateDataStatus(true, students.length);
+            updateStats();
+            updateFinancialSummary();
+            renderTable();
+            updateSyncStatus('local', 'Local data only');
+          } else {
+            updateDataStatus(false, 0);
+            updateSyncStatus('error', 'No data found');
+          }
+        }
+      } catch (error) {
+        console.error('Cloud load failed:', error);
+        // Fall back to localStorage
+        const stored = localStorage.getItem('mziyonkeStudents');
+        if (stored) {
+          students = JSON.parse(stored);
+          updateDataStatus(true, students.length);
+          updateStats();
+          updateFinancialSummary();
+          renderTable();
+        }
+        updateSyncStatus('error', 'Sync failed - using local');
+      }
+      
+      document.getElementById('lastRefreshTime').textContent = new Date().toLocaleTimeString();
+    }
+
+    async function syncToGoogleSheets() {
+      if (isSyncing || students.length === 0) return;
+      
+      isSyncing = true;
+      updateSyncStatus('syncing', 'Saving to cloud...');
+      
+      try {
+        for (const student of students) {
+          await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: 'action=save&data=' + encodeURIComponent(JSON.stringify(student)),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          });
+        }
+        updateSyncStatus('synced', `☁️ Saved ${students.length} students`);
+        showNotification('✅ Data synced to cloud!');
+      } catch (error) {
+        console.error('Cloud save failed:', error);
+        updateSyncStatus('error', 'Save failed');
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    function updateSyncStatus(status, text) {
+      const el = document.getElementById('syncStatus');
+      const icon = document.getElementById('syncIcon');
+      const txt = document.getElementById('syncText');
+      
+      el.style.display = 'inline-flex';
+      el.className = 'sync-status ' + status;
+      
+      if (status === 'syncing') icon.textContent = '🔄';
+      else if (status === 'synced') icon.textContent = '☁️';
+      else if (status === 'error') icon.textContent = '⚠️';
+      else if (status === 'local') icon.textContent = '💻';
+      
+      txt.textContent = text;
+    }
+
+    function syncData() {
+      loadFromGoogleSheets();
+    }
+
+    // AUTHENTICATION
+    function initUser() {
+      if (window.CURRENT_USER) {
+        const user = window.CURRENT_USER;
+        const perms = PERMISSIONS[user.role];
+
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userRole').textContent = perms.label;
+        document.getElementById('userRole').classList.add('role-' + user.role);
+        document.getElementById('userBranch').textContent = user.branch === 'all' ? 'All Branches' : user.branch;
+
+        applyStrictRoleRestrictions();
+        showNotification('👋 Welcome ' + user.name + '! ' + perms.label);
+      }
+    }
+
+    function applyStrictRoleRestrictions() {
+      const user = window.CURRENT_USER;
+      const perms = PERMISSIONS[user.role];
+
+      if (!perms.canAdd) {
+        const captureSection = document.getElementById('captureSection');
+        if (captureSection) captureSection.style.display = 'none';
+      }
+
+      if (!perms.canEdit && !perms.canDelete && !perms.canModifyProgress) {
+        const actionHeaders = document.querySelectorAll('th');
+        actionHeaders.forEach(th => {
+          if (th.textContent.includes('Actions')) th.style.display = 'none';
+        });
+        const actionCells = document.querySelectorAll('.action-buttons');
+        actionCells.forEach(cell => {
+          if (cell.closest('td')) cell.closest('td').style.display = 'none';
+        });
+      }
+
+      if (!perms.canExport) {
+        const exportBtn = document.querySelector('button[onclick="exportToExcel()"]');
+        if (exportBtn) exportBtn.style.display = 'none';
+      }
+
+      if (!perms.canDelete) {
+        const clearBtn = document.querySelector('button[onclick="clearAllData()"]');
+        if (clearBtn) clearBtn.style.display = 'none';
+      }
+
+      if (user.role === 'staff') {
+        document.getElementById('currentBranch').value = user.branch;
+        currentBranchFilter = user.branch;
+        document.getElementById('currentBranch').disabled = true;
+        document.querySelectorAll('.branch-filters').forEach(el => el.style.display = 'none');
+        document.querySelector('.financial-summary').style.display = 'none';
+        document.querySelector('.pricing-wrap').style.display = 'none';
+      }
+
+      if (!perms.canAdd && !perms.canEdit && !perms.canDelete) {
+        const notice = document.getElementById('viewOnlyNotice');
+        if (notice) {
+          notice.style.display = 'block';
+          if (user.role === 'manager') {
+            document.getElementById('viewOnlyText').textContent = 'You can view all data and generate reports, but cannot modify records.';
+          }
+        }
+      }
+    }
+
+    function checkPermission(action) {
+      const user = window.CURRENT_USER;
+      if (!user) return false;
+      const perms = PERMISSIONS[user.role];
+      
+      switch(action) {
+        case 'add': return perms.canAdd;
+        case 'edit': return perms.canEdit;
+        case 'delete': return perms.canDelete;
+        case 'export': return perms.canExport;
+        case 'modifyProgress': return perms.canModifyProgress;
+        case 'viewReports': return perms.canViewReports;
+        default: return false;
+      }
+    }
+
+    function logout() {
+      if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('mziyonkeSession');
+        window.location.href = 'index.html';
+      }
+    }
+
+    // REFRESH FUNCTION
     function refreshAllData() {
       const refreshBtn = document.querySelector('.btn-refresh');
       refreshBtn.classList.add('refreshing');
       refreshBtn.disabled = true;
       
-      try {
-        // Load students from localStorage
-        const storedData = localStorage.getItem('mziyonkeStudents');
-        if (storedData) {
-          students = JSON.parse(storedData);
-          updateDataStatus(true, students.length);
-        } else {
-          students = [];
-          updateDataStatus(false, 0);
-        }
-
-        // Restore file handles
-        restoreFileHandles().then(() => { 
-          writeXlsxToFile().catch(() => {});
-        });
-
-        // Update all displays
-        updateStats();
-        updateFinancialSummary();
-        renderTable();
-
-        // Update refresh time
-        const now = new Date();
-        document.getElementById('lastRefreshTime').textContent = now.toLocaleTimeString();
-
-        showNotification('✅ Data refreshed successfully! ' + students.length + ' students loaded');
-      } catch (error) {
-        console.error('Error refreshing data:', error);
-        showNotification('❌ Error refreshing data: ' + error.message, 'error');
-      } finally {
-        setTimeout(() => {
-          refreshBtn.classList.remove('refreshing');
-          refreshBtn.disabled = false;
-        }, 1000);
-      }
+      loadFromGoogleSheets();
+      
+      setTimeout(() => {
+        refreshBtn.classList.remove('refreshing');
+        refreshBtn.disabled = false;
+      }, 1000);
     }
 
     function updateDataStatus(hasData, count) {
@@ -1514,7 +1053,7 @@
         statusEl.style.background = '#d4edda';
         statusEl.style.color = '#155724';
         iconEl.textContent = '✅';
-        textEl.textContent = `${count} students in database`;
+        textEl.textContent = `${count} students loaded`;
       } else {
         statusEl.classList.add('empty');
         statusEl.style.background = '#f8d7da';
@@ -1526,23 +1065,16 @@
 
     // FINANCIAL FUNCTIONS
     function updateFinancialSummary() {
-      let totalRevenue = 0;
-      let totalCollected = 0;
       let totalOutstanding = 0;
       let outstandingCount = 0;
 
       students.forEach(student => {
-        totalRevenue += student.totalFee || 0;
-        totalCollected += student.amountPaid || 0;
-        
         if ((student.balance || 0) > 0) {
           totalOutstanding += student.balance;
           outstandingCount++;
         }
       });
 
-      // document.getElementById('totalRevenue') removed - element hidden
-      // document.getElementById('totalCollected') removed - element hidden
       document.getElementById('totalOutstanding').textContent = `R${totalOutstanding.toLocaleString()}`;
       document.getElementById('outstandingCount').textContent = outstandingCount;
     }
@@ -1554,27 +1086,6 @@
       if (outstandingStudents.length === 0) {
         modalBody.innerHTML = '<p style="text-align:center;padding:40px;color:#28a745;font-size:1.2em;">✅ No outstanding balances! All students have paid in full.</p>';
       } else {
-        const branchSummary = {};
-        outstandingStudents.forEach(s => {
-          if (!branchSummary[s.branch]) {
-            branchSummary[s.branch] = { count: 0, total: 0 };
-          }
-          branchSummary[s.branch].count++;
-          branchSummary[s.branch].total += (s.balance || 0);
-        });
-
-        let branchHTML = '<div style="margin-bottom:30px;"><h3 style="margin-bottom:15px;">Outstanding by Branch</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;">';
-        for (const [branch, data] of Object.entries(branchSummary)) {
-          branchHTML += `
-            <div style="background:#f8f9fa;padding:15px;border-radius:8px;border-left:4px solid #dc3545;">
-              <strong>${branch}</strong><br>
-              <span style="font-size:1.3em;color:#dc3545;font-weight:bold;">R${data.total.toLocaleString()}</span><br>
-              <small>${data.count} student${data.count > 1 ? 's' : ''}</small>
-            </div>
-          `;
-        }
-        branchHTML += '</div></div>';
-
         let tableHTML = `
           <h3 style="margin-bottom:15px;">Detailed Outstanding Balances</h3>
           <div style="overflow-x:auto;">
@@ -1584,55 +1095,25 @@
                   <th style="padding:12px;text-align:left;">Student</th>
                   <th style="padding:12px;text-align:left;">ID Number</th>
                   <th style="padding:12px;text-align:left;">Branch</th>
-                  <th style="padding:12px;text-align:left;">Sales Rep</th>
-                  <th style="padding:12px;text-align:left;">Code</th>
-                  <th style="padding:12px;text-align:right;">Total Fee</th>
-                  <th style="padding:12px;text-align:right;">Paid</th>
                   <th style="padding:12px;text-align:right;">Outstanding</th>
-                  <th style="padding:12px;text-align:left;">Method</th>
                 </tr>
               </thead>
               <tbody>
         `;
 
         outstandingStudents.forEach(s => {
-          const payDate = s.paymentDate ? new Date(s.paymentDate).toLocaleDateString() : 'N/A';
           tableHTML += `
             <tr style="border-bottom:1px solid #dee2e6;">
-              <td style="padding:12px;">
-                <strong>${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)}</strong><br>
-                <small style="color:#666;">${escapeHtml(s.phone)}</small>
-              </td>
+              <td style="padding:12px;"><strong>${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)}</strong></td>
               <td style="padding:12px;font-family:monospace;">${escapeHtml(s.idNumber)}</td>
               <td style="padding:12px;">${escapeHtml(s.branch)}</td>
-              <td style="padding:12px;"><span class="sales-rep-tag">${escapeHtml(s.salesRep || 'N/A')}</span></td>
-              <td style="padding:12px;">${escapeHtml(s.licenseCode)}</td>
-              <td style="padding:12px;text-align:right;">R${(s.totalFee || 0).toLocaleString()}</td>
-              <td style="padding:12px;text-align:right;color:#28a745;">R${(s.amountPaid || 0).toLocaleString()}</td>
               <td style="padding:12px;text-align:right;color:#dc3545;font-weight:bold;">R${(s.balance || 0).toLocaleString()}</td>
-              <td style="padding:12px;">
-                <span class="payment-method-tag method-${(s.paymentMethod || 'cash').toLowerCase()}">${s.paymentMethod || 'Cash'}</span><br>
-                <small>Last: ${payDate}</small>
-              </td>
             </tr>
           `;
         });
 
-        const totalOutstanding = outstandingStudents.reduce((sum, s) => sum + (s.balance || 0), 0);
-        tableHTML += `
-              </tbody>
-              <tfoot style="background:#f8f9fa;font-weight:bold;">
-                <tr>
-                  <td colspan="7" style="padding:12px;text-align:right;">TOTAL OUTSTANDING:</td>
-                  <td style="padding:12px;text-align:right;color:#dc3545;font-size:1.2em;">R${totalOutstanding.toLocaleString()}</td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        `;
-
-        modalBody.innerHTML = branchHTML + tableHTML;
+        tableHTML += '</tbody></table></div>';
+        modalBody.innerHTML = tableHTML;
       }
 
       document.getElementById('outstandingModal').style.display = 'flex';
@@ -1642,42 +1123,6 @@
       if (!e || e.target.id === 'outstandingModal') {
         document.getElementById('outstandingModal').style.display = 'none';
       }
-    }
-
-    function exportOutstandingToExcel() {
-      const outstandingStudents = students.filter(s => (s.balance || 0) > 0).sort((a, b) => (b.balance || 0) - (a.balance || 0));
-      
-      if (outstandingStudents.length === 0) {
-        alert('No outstanding balances to export!');
-        return;
-      }
-
-      const headers = ['First Name', 'Last Name', 'ID Number', 'Phone', 'Branch', 'Sales Rep', 'License Code', 'Payment Method', 'Total Fee', 'Amount Paid', 'Outstanding Balance', 'Payment Date', 'Last Payment'];
-      const csv = [
-        headers.join(','),
-        ...outstandingStudents.map(s => [
-          `"${s.firstName || ''}"`,
-          `"${s.lastName || ''}"`,
-          `"${s.idNumber || ''}"`,
-          `"${s.phone || ''}"`,
-          `"${s.branch || ''}"`,
-          `"${s.salesRep || ''}"`,
-          `"${s.licenseCode || ''}"`,
-          `"${s.paymentMethod || ''}"`,
-          `"${s.totalFee || 0}"`,
-          `"${s.amountPaid || 0}"`,
-          `"${s.balance || 0}"`,
-          `"${s.paymentDate || ''}"`,
-          `"${s.paymentHistory && s.paymentHistory.length > 0 ? s.paymentHistory[s.paymentHistory.length - 1].date : ''}"`
-        ].join(','))
-      ].join('\n');
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `Mziyonke_Outstanding_Balances_${new Date().toISOString().split('T')[0]}.csv`;
-      link.click();
-      showNotification('✅ Outstanding report exported!');
     }
 
     // FORM FUNCTIONS
@@ -1769,13 +1214,7 @@
       
       if (existing) {
         warning.classList.add('show');
-        warning.innerHTML = `
-          ⚠️ <strong>DUPLICATE ID!</strong><br>
-          Already registered: <strong>${existing.firstName} ${existing.lastName}</strong> at ${existing.branch}<br>
-          <button onclick="viewDetails('${existing.id}')" style="margin-top:8px;padding:5px 10px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;">
-            View Student
-          </button>
-        `;
+        warning.innerHTML = `⚠️ <strong>DUPLICATE ID!</strong><br>Already registered: <strong>${existing.firstName} ${existing.lastName}</strong> at ${existing.branch}`;
         checkIcon.classList.remove('show');
         isDuplicateId = true;
       } else {
@@ -1801,6 +1240,11 @@
 
     // ADD STUDENT
     function addStudent() {
+      if (!checkPermission('add')) {
+        alert('❌ You do not have permission to add students.');
+        return;
+      }
+
       const idNumber = document.getElementById('idNumber').value.trim();
       
       if (students.some(s => s.idNumber === idNumber)) {
@@ -1850,50 +1294,21 @@
         paymentMethod: method,
         paymentDate: paymentDate,
         paymentRef: document.getElementById('paymentRef').value.trim(),
-        nupayDetails: method === 'Nupay' ? {
-          monthlyDebit: pricing.nupay,
-          bankName: document.getElementById('bankName').value.trim(),
-          accountNumber: document.getElementById('accountNumber').value.trim()
-        } : null,
-        yocoDetails: method === 'Yoco' ? {
-          transactionId: document.getElementById('yocoTransId').value.trim(),
-          cardType: document.getElementById('yocoCardType').value
-        } : null,
         educator: educator,
         currentStage: initialStage,
         testResult: null,
         testResultDate: null,
         testResultNotes: null,
-        paymentHistory: [{
-          date: paymentDate,
-          amount: amount,
-          method: method,
-          reference: document.getElementById('paymentRef').value.trim() || 'Initial payment',
-          balanceAfter: pricing.total - amount
-        }],
-        stageHistory: [{
-          stage: 1,
-          date: new Date().toLocaleString(),
-          notes: `Captured at ${branch} by ${document.getElementById('salesRep').value.trim()}`
-        }],
         dateAdded: new Date().toLocaleString()
       };
-
-      if (initialStage >= 2) {
-        student.stageHistory.push({
-          stage: 2,
-          date: new Date().toLocaleString(),
-          notes: `Payment verified (${method}) on ${paymentDate}. ${educator ? 'Assigned to ' + educator : ''}`
-        });
-      }
 
       students.push(student);
       saveToStorage();
       clearForm();
       
       const msg = canStart 
-        ? `✅ Student captured! ${method === 'Nupay' ? 'Nupay active' : 'Payment received'} - assigned to ${educator}`
-        : `✅ Student captured! Pending ${method === 'Nupay' ? 'Nupay setup' : 'deposit payment'}`;
+        ? `✅ Student captured! Assigned to ${educator}`
+        : `✅ Student captured! Pending payment`;
       showNotification(msg);
     }
 
@@ -1912,6 +1327,11 @@
     }
 
     function clearAllData() {
+      if (!checkPermission('delete')) {
+        alert('❌ Only administrators can clear all data.');
+        return;
+      }
+      
       if (confirm('Are you sure you want to clear ALL student data? This cannot be undone.')) {
         students = [];
         saveToStorage();
@@ -1922,11 +1342,13 @@
 
     function saveToStorage() {
       localStorage.setItem('mziyonkeStudents', JSON.stringify(students));
-      writeXlsxToFile().catch(() => {});
       updateStats();
       updateFinancialSummary();
       updateDataStatus(true, students.length);
       renderTable();
+      
+      // Sync to Google Sheets
+      syncToGoogleSheets();
     }
 
     // RENDER TABLE
@@ -1940,7 +1362,6 @@
         data = data.filter(s => s.currentStage == currentStageFilter);
       }
       
-      // Educator status filter
       if (currentEducatorFilter !== 'all') {
         if (currentEducatorFilter === 'active') {
           data = data.filter(s => s.currentStage < 6 || (s.currentStage === 6 && s.testResult === 'pending'));
@@ -1956,9 +1377,6 @@
         return;
       }
 
-      // Check user permissions for column visibility
-      const canModify = checkPermission('modifyProgress') || checkPermission('edit') || checkPermission('delete');
-
       tbody.innerHTML = data.map(student => {
         const stage = STAGES[student.currentStage] || STAGES[1];
         const isDepositComplete = (student.amountPaid || 0) >= (student.depositRequired || 0);
@@ -1972,27 +1390,18 @@
           const resultIcon = student.testResult === 'passed' ? '✅' : 
                             student.testResult === 'failed' ? '❌' : '⏳';
           testResultHTML = `<span class="${resultClass}">${resultIcon} ${student.testResult.toUpperCase()}</span>`;
-          if (student.testResultNotes) {
-            testResultHTML += `<br><small style="color:#666;font-size:.75em;">${escapeHtml(student.testResultNotes.substring(0, 30))}${student.testResultNotes.length > 30 ? '...' : ''}</small>`;
-          }
         }
         
         return `
           <tr>
-            <td>
-              <strong style="color:#dc3545;font-family:monospace;">
-                ${escapeHtml(student.idNumber)}
-              </strong>
-            </td>
+            <td><strong style="color:#dc3545;font-family:monospace;">${escapeHtml(student.idNumber)}</strong></td>
             <td>
               <strong>${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}</strong><br>
               <small>${escapeHtml(student.phone)}</small>
             </td>
             <td>
               <span class="branch-tag">${escapeHtml(student.branch)}</span><br>
-              <small style="color:#666;">
-                ${student.educator ? '👨‍🏫 ' + escapeHtml(student.educator) : '⏳ No educator yet'}
-              </small>
+              <small style="color:#666;">${student.educator ? '👨‍🏫 ' + escapeHtml(student.educator) : '⏳ No educator yet'}</small>
             </td>
             <td>
               <strong>${escapeHtml(student.licenseCode)}</strong><br>
@@ -2005,172 +1414,162 @@
               <span class="payment-method-tag ${methodClass}">${student.paymentMethod || 'Cash'}</span><br>
               <small style="color:#666;">Paid: ${payDate}</small><br>
               <small>Bal: R${(student.balance || 0).toLocaleString()}</small>
-              ${student.paymentMethod === 'Nupay' ? '<br><small style="color:#4caf50;">🔄 Debit active</small>' : ''}
-              ${student.paymentMethod === 'Yoco' ? '<br><small style="color:#ff6b35;">💳 Card</small>' : ''}
             </td>
             <td>
               <span class="stage-badge" style="background:${stage.color};${stage.color === '#ffc107' ? 'color:#000;' : ''}">
                 ${stage.icon} ${stage.name}
               </span>
             </td>
-            <td>
-              ${testResultHTML}
-            </td>
-            <td>
-              <span class="sales-rep-tag">${escapeHtml(student.salesRep || 'N/A')}</span>
-            </td>
+            <td>${testResultHTML}</td>
+            <td><span class="sales-rep-tag">${escapeHtml(student.salesRep || 'N/A')}</span></td>
             <td>${student.dateAdded}</td>
-            <td class="action-buttons no-print">
-              <button class="action-btn btn-primary" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation(); handleViewClick(this);">👁️ View</button>
-              <button class="action-btn btn-edit" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation(); handleEditClick(this);">✏️ Edit</button>
-              ${getActionButtons(student)}
-            </td>
+            <td class="action-buttons no-print">${getActionButtons(student)}</td>
           </tr>
         `;
       }).join('');
     }
 
-   function getActionButtons(student) {
-  const buttons = [];
+    function getActionButtons(student) {
+      const buttons = [];
+      const canModify = checkPermission('modifyProgress');
+      const canDelete = checkPermission('delete');
+      const canEdit = checkPermission('edit');
 
-  // Check if user has modify permissions
-  const canModify = checkPermission('modifyProgress');
-  const canDelete = checkPermission('delete');
-  const canEdit = checkPermission('edit');
-
-  // If no permissions, return empty (no action buttons)
-  if (!canModify && !canDelete && !canEdit) {
-    return '<span style="color:#999;font-size:0.85em;">View Only</span>';
-  }
-
-  const isDepositComplete = (student.amountPaid || 0) >= (student.depositRequired || 0);
-  const isNupay = student.paymentMethod === 'Nupay';
-
-  // Only show progress buttons if user can modify
-  if (canModify) {
-    if (student.currentStage === 1 || (isNupay && (student.balance || 0) > 0)) {
-      if (isNupay) {
-        buttons.push(`<button class="action-btn btn-nupay" onclick="event.stopPropagation();recordNupayPayment('${student.id}')">🔄 Record Debit</button>`);
-      } else {
-        buttons.push(`<button class="action-btn btn-warning" onclick="event.preventDefault(); event.stopPropagation();recordPayment('${student.id}')">💰 Record Payment</button>`);
-      }
-    }
-
-    if (student.currentStage === 2) {
-      buttons.push(`<button class="action-btn btn-info" onclick="event.stopPropagation();startClasses('${student.id}')">👨‍🏫 Start Classes</button>`);
-    }
-
-    if (student.currentStage === 3) {
-      buttons.push(`<button class="action-btn btn-orange" onclick="event.stopPropagation();markReady('${student.id}')">✅ Ready</button>`);
-    }
-
-    if (student.currentStage === 4) {
-      buttons.push(`<button class="action-btn btn-success" onclick="event.stopPropagation();bookTest('${student.id}')">📅 Book Test</button>`);
-    }
-
-    if (student.currentStage === 5) {
-      buttons.push(`<button class="action-btn btn-purple" onclick="event.stopPropagation();openTestResultModal('${student.id}')">📝 Test Results</button>`);
-    }
-  }
-
-  // Always show View button for everyone
-  buttons.push(`<button class="action-btn btn-primary" onclick="event.stopPropagation(); viewDetails('${student.id}')">👁️ View</button>`);
-
-  // Show Edit button if user can edit
-  if (canEdit) {
-    buttons.push(`<button class="action-btn btn-edit" onclick="event.stopPropagation(); openEditModal('${student.id}')">✏️ Edit</button>`);
-  }
-
-  // Show WhatsApp button for managers and admins
-  if (checkPermission('viewReports') || checkPermission('modifyProgress')) {
-    buttons.push(`<button class="action-btn btn-whatsapp" onclick="event.stopPropagation(); openWhatsApp('${encodeURIComponent(student.phone)}', '${encodeURIComponent(student.firstName)}', '${encodeURIComponent(student.balance || 0)}', '${encodeURIComponent(student.currentStage)}', '${encodeURIComponent(student.licenseCode || '')}');" title="Message on WhatsApp">💬 WhatsApp</button>`);
-  }
-
-  // Show delete button only if user can delete
-  if (canDelete) {
-    buttons.push(`<button class="action-btn btn-delete" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation(); handleDeleteClick(this, event);" title="Remove student">🗑️ Delete</button>`);
-  }
-
-  return buttons.join('');
-}
-            
-    // SAFE FIND STUDENT - handles various ID formats
-    function findStudentById(studentId) {
-      if (!studentId) {
-        console.error('findStudentById: No ID provided');
-        return null;
+      if (!canModify && !canDelete && !canEdit) {
+        return '<span style="color:#999;font-size:0.85em;">View Only</span>';
       }
 
-      console.log('Looking for student with ID:', studentId);
-      console.log('Total students:', students.length);
+      const isNupay = student.paymentMethod === 'Nupay';
 
-      // Try exact match first
-      let index = students.findIndex(s => s.id === studentId);
-      if (index !== -1) {
-        console.log('Found by exact match at index:', index);
-        return { student: students[index], index: index };
-      }
+      if (canModify) {
+        if (student.currentStage === 1 || (isNupay && (student.balance || 0) > 0)) {
+          if (isNupay) {
+            buttons.push(`<button class="action-btn btn-nupay" onclick="event.stopPropagation();recordNupayPayment('${student.id}')">🔄 Record Debit</button>`);
+          } else {
+            buttons.push(`<button class="action-btn btn-warning" onclick="event.stopPropagation();recordPayment('${student.id}')">💰 Record Payment</button>`);
+          }
+        }
 
-      // Try trimming whitespace
-      const trimmedId = studentId.trim();
-      if (trimmedId !== studentId) {
-        index = students.findIndex(s => s.id === trimmedId);
-        if (index !== -1) {
-          console.log('Found by trimmed match at index:', index);
-          return { student: students[index], index: index };
+        if (student.currentStage === 2) {
+          buttons.push(`<button class="action-btn btn-info" onclick="event.stopPropagation();startClasses('${student.id}')">👨‍🏫 Start Classes</button>`);
+        }
+
+        if (student.currentStage === 3) {
+          buttons.push(`<button class="action-btn btn-orange" onclick="event.stopPropagation();markReady('${student.id}')">✅ Ready</button>`);
+        }
+
+        if (student.currentStage === 4) {
+          buttons.push(`<button class="action-btn btn-success" onclick="event.stopPropagation();bookTest('${student.id}')">📅 Book Test</button>`);
+        }
+
+        if (student.currentStage === 5) {
+          buttons.push(`<button class="action-btn btn-purple" onclick="event.stopPropagation();openTestResultModal('${student.id}')">📝 Test Results</button>`);
         }
       }
 
-      // Try decoding if it looks encoded
+      buttons.push(`<button class="action-btn btn-primary" onclick="event.stopPropagation();viewDetails('${student.id}')">👁️ View</button>`);
+
+      if (canEdit) {
+        buttons.push(`<button class="action-btn btn-edit" onclick="event.stopPropagation();openEditModal('${student.id}')">✏️ Edit</button>`);
+      }
+
+      if (checkPermission('viewReports') || checkPermission('modifyProgress')) {
+        buttons.push(`<button class="action-btn btn-whatsapp" onclick="event.stopPropagation();openWhatsApp('${encodeURIComponent(student.phone)}', '${encodeURIComponent(student.firstName)}', '${encodeURIComponent(student.balance || 0)}', '${encodeURIComponent(student.currentStage)}', '${encodeURIComponent(student.licenseCode || '')}')" title="Message on WhatsApp">💬 WhatsApp</button>`);
+      }
+
+      if (canDelete) {
+        buttons.push(`<button class="action-btn btn-delete" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation();handleDeleteClick(this, event)" title="Remove student">🗑️ Delete</button>`);
+      }
+
+      return buttons.join('');
+    }
+
+    function findStudentById(studentId) {
+      if (!studentId) return null;
+      
+      let index = students.findIndex(s => s.id === studentId);
+      if (index !== -1) return { student: students[index], index: index };
+      
+      const trimmedId = studentId.trim();
+      if (trimmedId !== studentId) {
+        index = students.findIndex(s => s.id === trimmedId);
+        if (index !== -1) return { student: students[index], index: index };
+      }
+      
       try {
         const decodedId = decodeURIComponent(studentId);
         if (decodedId !== studentId) {
           index = students.findIndex(s => s.id === decodedId);
-          if (index !== -1) {
-            console.log('Found by decoded match at index:', index);
-            return { student: students[index], index: index };
-          }
+          if (index !== -1) return { student: students[index], index: index };
         }
       } catch(e) {}
-
-      // Log all IDs for debugging
-      console.log('Available student IDs:', students.map(s => ({ 
-        id: s.id, 
-        name: s.firstName + ' ' + s.lastName,
-        idType: typeof s.id,
-        idLength: s.id ? s.id.length : 0
-      })));
-
+      
       return null;
     }
 
+    function handleViewClick(button) {
+      let studentId = button.getAttribute('data-student-id');
+      try { studentId = decodeURIComponent(studentId); } catch(e) {}
+      viewDetails(studentId);
+    }
 
-    // OPEN WHATSAPP - send message to student
+    function handleEditClick(button) {
+      let studentId = button.getAttribute('data-student-id');
+      try { studentId = decodeURIComponent(studentId); } catch(e) {}
+      openEditModal(studentId);
+    }
+
+    function handleDeleteClick(button, event) {
+      let studentId = button.getAttribute('data-student-id');
+      try { studentId = decodeURIComponent(studentId); } catch(e) {}
+      deleteStudent(studentId, event);
+    }
+
+    function deleteStudent(studentId, event) {
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+
+      if (!checkPermission('delete')) {
+        alert('❌ You do not have permission to delete students.');
+        return;
+      }
+
+      const found = findStudentById(studentId);
+      const studentIndex = found ? found.index : -1;
+      
+      if (studentIndex === -1) {
+        alert('Error: Student not found!');
+        return;
+      }
+
+      const student = found.student;
+
+      if (confirm(`Are you sure you want to DELETE this student?\n\nName: ${student.firstName} ${student.lastName}\nID: ${student.idNumber}\n\nThis action CANNOT be undone!`)) {
+        students.splice(studentIndex, 1);
+        localStorage.setItem('mziyonkeStudents', JSON.stringify(students));
+        saveToStorage();
+        showNotification('✅ Student deleted: ' + student.firstName + ' ' + student.lastName);
+      }
+    }
+
     function openWhatsApp(phone, firstName, balance, stage, licenseCode) {
       try {
-        // Decode parameters
         phone = decodeURIComponent(phone);
         firstName = decodeURIComponent(firstName);
         balance = decodeURIComponent(balance);
         stage = decodeURIComponent(stage || '1');
         licenseCode = decodeURIComponent(licenseCode || '');
 
-        // Clean phone number (remove spaces, ensure +27 or 0 prefix)
         let cleanPhone = phone.replace(/\s+/g, '');
-
-        // Format for South Africa
         if (cleanPhone.startsWith('0')) {
           cleanPhone = '27' + cleanPhone.substring(1);
         } else if (!cleanPhone.startsWith('+') && !cleanPhone.startsWith('27')) {
           cleanPhone = '27' + cleanPhone;
         }
-
-        // Remove + if present
         cleanPhone = cleanPhone.replace('+', '');
 
-        console.log('Opening WhatsApp for:', cleanPhone);
-
-        // Get stage name
         const stageNames = {
           1: 'Registration/Captured',
           2: 'Deposit Paid',
@@ -2179,136 +1578,34 @@
           5: 'Booked for Test',
           6: 'Test Results'
         };
-        const stageName = stageNames[stage] || 'Registration';
-
-        // Create comprehensive message
+        
         let message = `Hi ${firstName}, greetings from Mziyonke Driving School! 👋\n\n`;
-
-        // Add balance info
+        
         if (parseFloat(balance) > 0) {
-          message += `💰 *Outstanding Balance:* R${balance}\n`;
-          message += `Please arrange payment when possible.\n\n`;
+          message += `💰 *Outstanding Balance:* R${balance}\nPlease arrange payment when possible.\n\n`;
         } else {
           message += `✅ Your account is fully paid up. Thank you!\n\n`;
         }
 
-        // Add license progress section
-        message += `🚗 *License Progress Check:*\n`;
-        message += `You are currently at: *${stageName}*\n`;
-        if (licenseCode) {
-          message += `License Code: *${licenseCode}*\n`;
-        }
-        message += `\n`;
-        message += `How is your progress going? Have you started your lessons? What stage are you currently at in your journey to getting your driver's license? Please let us know if you need any assistance or have any questions.\n\n`;
-        message += `Reply when you can. Safe driving! 🚦`;
+        message += `🚗 *License Progress:*\nCurrent: *${stageNames[stage] || 'Registration'}*\n`;
+        if (licenseCode) message += `License Code: *${licenseCode}*\n`;
+        message += `\nHow is your progress? Reply when you can. Safe driving! 🚦`;
 
-        // Encode message for URL
-        const encodedMessage = encodeURIComponent(message);
-
-        // Create WhatsApp URL (works for both web and app)
-        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
-
-        // Open in new tab
+        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
-
         showNotification('💬 Opening WhatsApp for ' + firstName);
-
       } catch (error) {
-        console.error('WhatsApp error:', error);
         alert('Error opening WhatsApp: ' + error.message);
-      }
-    }
-
-// HANDLER FOR VIEW BUTTON
-    function handleViewClick(button) {
-      let studentId = button.getAttribute('data-student-id');
-      try {
-        studentId = decodeURIComponent(studentId);
-      } catch(e) {}
-      console.log('View clicked for ID:', studentId);
-      viewDetails(studentId);
-    }
-
-    // HANDLER FOR EDIT BUTTON  
-    function handleEditClick(button) {
-      let studentId = button.getAttribute('data-student-id');
-      try {
-        studentId = decodeURIComponent(studentId);
-      } catch(e) {}
-      console.log('Edit clicked for ID:', studentId);
-      openEditModal(studentId);
-    }
-
-// HANDLE DELETE CLICK - extracts ID from data attribute
-    function handleDeleteClick(button, event) {
-      let studentId = button.getAttribute('data-student-id');
-      // Decode URI component in case ID has special chars
-      try {
-        studentId = decodeURIComponent(studentId);
-      } catch(e) {
-        // If decode fails, use as-is
-      }
-      console.log('Delete clicked, extracted ID:', studentId);
-      if (!studentId) {
-        console.error('No data-student-id found on button');
-        alert('Error: Could not find student ID');
-        return;
-      }
-      deleteStudent(studentId, event);
-    }
-
-    // DELETE STUDENT FUNCTION - FIXED
-    function deleteStudent(studentId, event) {
-      // Prevent event bubbling
-      if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-
-      console.log('Deleting student ID:', studentId);
-
-      // Find student index
-      const found = findStudentById(studentId);
-      const studentIndex = found ? found.index : -1;
-      if (studentIndex === -1) {
-        console.error('Student not found:', studentId);
-        alert('Error: Student not found!');
-        return;
-      }
-
-      const student = found ? found.student : null;
-
-      const confirmMsg = 'Are you sure you want to DELETE this student?\n\n' +
-        'Name: ' + student.firstName + ' ' + student.lastName + '\n' +
-        'ID: ' + student.idNumber + '\n' +
-        'Branch: ' + student.branch + '\n\n' +
-        'This action CANNOT be undone!';
-
-      if (confirm(confirmMsg)) {
-        try {
-          // Remove using splice
-          students.splice(studentIndex, 1);
-
-          // Save immediately
-          localStorage.setItem('mziyonkeStudents', JSON.stringify(students));
-
-          // Update all displays
-          updateStats();
-          updateFinancialSummary();
-          updateDataStatus(true, students.length);
-          renderTable();
-
-          showNotification('✅ Student deleted: ' + student.firstName + ' ' + student.lastName);
-          console.log('Delete successful');
-        } catch (error) {
-          console.error('Delete failed:', error);
-          alert('Delete failed: ' + error.message);
-        }
       }
     }
 
     // EDIT FUNCTIONS
     function openEditModal(studentId) {
+      if (!checkPermission('edit')) {
+        alert('❌ You do not have permission to edit students.');
+        return;
+      }
+
       const student = students.find(s => s.id === studentId);
       if (!student) return;
 
@@ -2353,7 +1650,7 @@
         const studentId = document.getElementById('editStudentId').value;
         const student = students.find(s => s.id === studentId);
         
-        if (student && student.totalFee === PRICING[student.licenseCode]?.total) {
+        if (student) {
           document.getElementById('editTotalFee').value = PRICING[code].total;
           updateEditBalance();
         }
@@ -2367,6 +1664,11 @@
     }
 
     function saveEdit() {
+      if (!checkPermission('edit')) {
+        alert('❌ You do not have permission to edit students.');
+        return;
+      }
+
       const studentId = document.getElementById('editStudentId').value;
       const student = students.find(s => s.id === studentId);
       if (!student) return;
@@ -2388,24 +1690,8 @@
       }
       
       const newAmountPaid = parseFloat(document.getElementById('editAmountPaid').value) || 0;
-      const oldAmountPaid = student.amountPaid || 0;
-      
-      if (newAmountPaid !== oldAmountPaid) {
-        const difference = newAmountPaid - oldAmountPaid;
-        student.amountPaid = newAmountPaid;
-        student.balance = (student.totalFee || 0) - newAmountPaid;
-        
-        if (!student.paymentHistory) student.paymentHistory = [];
-        if (difference !== 0) {
-          student.paymentHistory.push({
-            date: new Date().toISOString().split('T')[0],
-            amount: Math.abs(difference),
-            method: student.paymentMethod,
-            reference: difference > 0 ? 'Additional payment (edited)' : 'Payment adjustment (edited)',
-            balanceAfter: student.balance
-          });
-        }
-      }
+      student.amountPaid = newAmountPaid;
+      student.balance = (student.totalFee || 0) - newAmountPaid;
 
       saveToStorage();
       closeEditModal();
@@ -2462,7 +1748,7 @@
 
       const selectedResult = document.querySelector('input[name="testResult"]:checked');
       if (!selectedResult) {
-        alert('Please select a test result (Passed, Failed, or Pending)');
+        alert('Please select a test result');
         return;
       }
 
@@ -2474,41 +1760,23 @@
 
       const testNotes = document.getElementById('testNotes').value.trim();
       if (!testNotes && (selectedResult.value === 'failed' || selectedResult.value === 'pending')) {
-        alert('Please enter notes/reason for Failed or Pending status');
+        alert('Please enter notes for Failed or Pending status');
         return;
       }
 
-      const result = selectedResult.value;
-      
       student.currentStage = 6;
-      student.testResult = result;
+      student.testResult = selectedResult.value;
       student.testResultDate = testDate;
       student.testResultNotes = testNotes;
-      
-      if (!student.stageHistory) student.stageHistory = [];
-      let stageNotes = `Test result recorded: ${result.toUpperCase()} on ${testDate}`;
-      if (result === 'failed') {
-        stageNotes += `. Reason: ${testNotes}. Student remains with educator for re-training.`;
-      } else if (result === 'pending') {
-        stageNotes += `. Pending reason: ${testNotes}. Awaiting final outcome.`;
-      } else {
-        stageNotes += `. Student completed successfully!`;
-      }
-      
-      student.stageHistory.push({
-        stage: 6,
-        date: new Date().toLocaleString(),
-        notes: stageNotes
-      });
 
       saveToStorage();
       closeTestResultModal();
       
-      const msg = result === 'passed' 
-        ? `✅ Test result saved! ${student.firstName} has PASSED and completed the course!`
-        : result === 'failed'
-        ? `⚠️ Test result saved! ${student.firstName} FAILED. Student stays with educator for re-training.`
-        : `⏳ Test result saved! ${student.firstName} status is PENDING.`;
+      const msg = selectedResult.value === 'passed' 
+        ? `✅ ${student.firstName} has PASSED!`
+        : selectedResult.value === 'failed'
+        ? `⚠️ ${student.firstName} FAILED - re-training required`
+        : `⏳ ${student.firstName} status is PENDING`;
       showNotification(msg);
     }
 
@@ -2520,91 +1788,56 @@
 
     // PAYMENT FUNCTIONS
     function recordPayment(studentId) {
+      if (!checkPermission('modifyProgress')) {
+        alert('❌ You do not have permission to record payments.');
+        return;
+      }
+
       const student = students.find(s => s.id === studentId);
       if (!student) return;
 
       const amount = prompt(`Enter payment amount:\nTotal Fee: R${student.totalFee || 0}\nPaid so far: R${student.amountPaid || 0}\nBalance: R${student.balance || 0}`);
       if (!amount || isNaN(amount) || amount <= 0) return;
 
-      const method = prompt('Payment method:\n1. Cash\n2. EFT\n3. Yoco\n4. Nupay\n\nEnter number or name:', 'Cash');
-      if (!method) return;
-
-      const methodMap = { '1': 'Cash', '2': 'EFT', '3': 'Yoco', '4': 'Nupay' };
-      const paymentMethod = methodMap[method] || method;
-      
-      const today = new Date().toISOString().split('T')[0];
-      const payDate = prompt('Enter payment date (YYYY-MM-DD):', today);
-      if (!payDate) return;
-
       const newAmount = (student.amountPaid || 0) + parseFloat(amount);
       const canStartNow = newAmount >= (student.depositRequired || 0) && student.currentStage === 1;
 
       student.amountPaid = newAmount;
       student.balance = (student.totalFee || 0) - newAmount;
-      
-      if (!student.paymentHistory) student.paymentHistory = [];
-      student.paymentHistory.push({
-        date: payDate,
-        amount: parseFloat(amount),
-        method: paymentMethod,
-        reference: 'Additional payment',
-        balanceAfter: student.balance
-      });
 
       if (canStartNow) {
         student.currentStage = 2;
         student.educator = BRANCH_EDUCATORS[student.branch];
-        if (!student.stageHistory) student.stageHistory = [];
-        student.stageHistory.push({
-          stage: 2,
-          date: new Date().toLocaleString(),
-          notes: `Deposit completed on ${payDate}. Payment: ${paymentMethod}. Assigned to ${student.educator}`
-        });
-        showNotification(`✅ Payment recorded! Deposit complete. Assigned to ${student.educator}`);
+        showNotification(`✅ Payment recorded! Assigned to ${student.educator}`);
       } else {
-        showNotification(`✅ Payment recorded: R${amount} via ${paymentMethod} on ${payDate}`);
+        showNotification(`✅ Payment recorded: R${amount}`);
       }
 
       saveToStorage();
     }
 
     function recordNupayPayment(studentId) {
+      if (!checkPermission('modifyProgress')) {
+        alert('❌ You do not have permission to record payments.');
+        return;
+      }
+
       const student = students.find(s => s.id === studentId);
       if (!student) return;
 
       const monthlyAmount = PRICING[student.licenseCode]?.nupay || 250;
-      
-      const today = new Date().toISOString().split('T')[0];
-      const debitDate = prompt(`Record Nupay debit of R${monthlyAmount}?\n\nEnter debit date (YYYY-MM-DD):`, today);
-      if (!debitDate) return;
-
       const newAmount = (student.amountPaid || 0) + monthlyAmount;
       const canStartNow = student.currentStage === 1 && newAmount > 0;
 
       student.amountPaid = newAmount;
       student.balance = Math.max(0, (student.totalFee || 0) - newAmount);
-      
-      if (!student.paymentHistory) student.paymentHistory = [];
-      student.paymentHistory.push({
-        date: debitDate,
-        amount: monthlyAmount,
-        method: 'Nupay',
-        reference: 'Monthly debit',
-        balanceAfter: student.balance
-      });
 
       if (canStartNow) {
         student.currentStage = 2;
         student.educator = BRANCH_EDUCATORS[student.branch];
-        if (!student.stageHistory) student.stageHistory = [];
-        student.stageHistory.push({
-          stage: 2,
-          date: new Date().toLocaleString(),
-          notes: `Nupay activated on ${debitDate}. Assigned to ${student.educator}`
-        });
-        showNotification(`✅ Nupay debit recorded! Student assigned to ${student.educator}`);
+        showNotification(`✅ Nupay recorded! Assigned to ${student.educator}`);
       } else {
-        showNotification(`✅ Nupay debit recorded: R${monthlyAmount} on ${debitDate}`);
+        showNotification(`✅ Nupay debit recorded: R${monthlyAmount}`);
       }
 
       saveToStorage();
@@ -2612,40 +1845,39 @@
 
     // STAGE PROGRESSION
     function startClasses(studentId) {
+      if (!checkPermission('modifyProgress')) {
+        alert('❌ You do not have permission to update progress.');
+        return;
+      }
+
       const student = students.find(s => s.id === studentId);
       if (!student) return;
 
       student.currentStage = 3;
-      if (!student.stageHistory) student.stageHistory = [];
-      student.stageHistory.push({
-        stage: 3,
-        date: new Date().toLocaleString(),
-        notes: `Classes started with ${student.educator}`
-      });
-
       saveToStorage();
       showNotification(`✅ ${student.firstName} started classes with ${student.educator}`);
     }
 
     function markReady(studentId) {
+      if (!checkPermission('modifyProgress')) {
+        alert('❌ You do not have permission to update progress.');
+        return;
+      }
+
       const student = students.find(s => s.id === studentId);
       if (!student) return;
 
-      const notes = prompt('Enter readiness confirmation:');
-      
       student.currentStage = 4;
-      if (!student.stageHistory) student.stageHistory = [];
-      student.stageHistory.push({
-        stage: 4,
-        date: new Date().toLocaleString(),
-        notes: notes || 'Student ready for test booking'
-      });
-
       saveToStorage();
       showNotification(`✅ ${student.firstName} marked ready for booking!`);
     }
 
     function bookTest(studentId) {
+      if (!checkPermission('modifyProgress')) {
+        alert('❌ You do not have permission to update progress.');
+        return;
+      }
+
       const student = students.find(s => s.id === studentId);
       if (!student) return;
 
@@ -2653,13 +1885,6 @@
       if (!bookingDetails) return;
 
       student.currentStage = 5;
-      if (!student.stageHistory) student.stageHistory = [];
-      student.stageHistory.push({
-        stage: 5,
-        date: new Date().toLocaleString(),
-        notes: `Test booked: ${bookingDetails}`
-      });
-
       saveToStorage();
       showNotification(`✅ Test booked for ${student.firstName}!`);
     }
@@ -2670,81 +1895,8 @@
       if (!student) return;
 
       const modalBody = document.getElementById('modalBody');
-      const stageActions = document.getElementById('stageActions');
-
-      let paymentHTML = '';
-      if (student.paymentHistory && student.paymentHistory.length > 0) {
-        paymentHTML = `
-          <div class="payment-history">
-            <h4 style="margin-bottom:10px;">Payment History</h4>
-            ${student.paymentHistory.map(p => `
-              <div class="payment-record">
-                <span>${new Date(p.date).toLocaleDateString()}</span>
-                <span><strong>R${(p.amount || 0).toLocaleString()}</strong> ${p.method}</span>
-                <span>Bal: R${(p.balanceAfter || 0).toLocaleString()}</span>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
-
-      let timelineHTML = '<div class="stage-timeline">';
-      for (let i = 1; i <= 6; i++) {
-        const history = student.stageHistory?.find(h => h.stage === i);
-        let isDone = i < (student.currentStage || 1);
-        let isCurrent = i === (student.currentStage || 1);
-        let itemClass = '';
-        let numberColor = STAGES[i]?.color || '#6c757d';
-        
-        if (i === 6 && student.testResult) {
-          if (student.testResult === 'passed') {
-            isDone = true;
-            isCurrent = false;
-          } else if (student.testResult === 'failed') {
-            itemClass = 'failed';
-          } else if (student.testResult === 'pending') {
-            itemClass = 'pending';
-          }
-        }
-        
-        timelineHTML += `
-          <div class="timeline-item ${isDone ? 'completed' : ''} ${isCurrent ? 'current' : ''} ${itemClass}">
-            <div class="timeline-number" style="background:${numberColor}">${i}</div>
-            <div style="flex:1;">
-              <div style="font-weight:600;">${STAGES[i]?.icon || '📝'} ${STAGES[i]?.name || 'Stage ' + i}</div>
-              ${history ? `<small>${history.date}</small>` : '<small style="color:#999;">Pending</small>'}
-              ${history?.notes ? `<div style="margin-top:5px;font-size:.9em;">${escapeHtml(history.notes)}</div>` : ''}
-            </div>
-          </div>
-        `;
-      }
-      timelineHTML += '</div>';
-
-      let methodDetailsHTML = '';
+      const stage = STAGES[student.currentStage] || STAGES[1];
       
-      if (student.paymentMethod === 'Nupay' && student.nupayDetails) {
-        methodDetailsHTML = `
-          <div style="background:#e8f5e9;padding:15px;border-radius:8px;margin-bottom:15px;border-left:4px solid #4caf50;">
-            <h4 style="color:#4caf50;margin-bottom:10px;">🔄 Nupay Details</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.9em;">
-              <div><strong>Monthly Debit:</strong> R${student.nupayDetails.monthlyDebit || 'N/A'}</div>
-              <div><strong>Bank:</strong> ${escapeHtml(student.nupayDetails.bankName) || 'Not specified'}</div>
-              <div><strong>Account:</strong> ${escapeHtml(student.nupayDetails.accountNumber) || 'Not specified'}</div>
-            </div>
-          </div>
-        `;
-      } else if (student.paymentMethod === 'Yoco' && student.yocoDetails) {
-        methodDetailsHTML = `
-          <div style="background:#fff3e0;padding:15px;border-radius:8px;margin-bottom:15px;border-left:4px solid #ff6b35;">
-            <h4 style="color:#ff6b35;margin-bottom:10px;">💳 Yoco Details</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.9em;">
-              <div><strong>Transaction ID:</strong> ${escapeHtml(student.yocoDetails.transactionId) || 'Not specified'}</div>
-              <div><strong>Card Type:</strong> ${escapeHtml(student.yocoDetails.cardType) || 'Not specified'}</div>
-            </div>
-          </div>
-        `;
-      }
-
       let testResultHTML = '';
       if (student.currentStage === 6 && student.testResult) {
         const resultColor = student.testResult === 'passed' ? '#28a745' : 
@@ -2774,20 +1926,23 @@
             <div><strong>Educator:</strong> ${escapeHtml(student.educator) || 'Not assigned'}</div>
             <div><strong>Code:</strong> ${escapeHtml(student.licenseCode)}</div>
             <div><strong>Sales Rep:</strong> <span class="sales-rep-tag">${escapeHtml(student.salesRep || 'N/A')}</span></div>
-            <div><strong>Payment Method:</strong> <span class="payment-method-tag method-${(student.paymentMethod || 'cash').toLowerCase()}">${student.paymentMethod || 'Cash'}</span></div>
+            <div><strong>Payment Method:</strong> ${student.paymentMethod || 'Cash'}</div>
             <div><strong>Payment Date:</strong> ${payDate}</div>
             <div><strong>Total Fee:</strong> R${(student.totalFee || 0).toLocaleString()}</div>
             <div><strong>Paid:</strong> R${(student.amountPaid || 0).toLocaleString()}</div>
             <div><strong>Balance:</strong> R${(student.balance || 0).toLocaleString()}</div>
           </div>
         </div>
-        ${methodDetailsHTML}
         ${testResultHTML}
-        ${paymentHTML}
-        ${timelineHTML}
+        <div style="background:#f8f9fa;padding:15px;border-radius:8px;">
+          <h4>Current Stage</h4>
+          <span class="stage-badge" style="background:${stage.color};${stage.color === '#ffc107' ? 'color:#000;' : ''}">
+            ${stage.icon} ${stage.name}
+          </span>
+        </div>
       `;
 
-      stageActions.innerHTML = getActionButtons(student).replace(/action-btn/g, '').replace(/btn-small/g, '');
+      document.getElementById('stageActions').innerHTML = getActionButtons(student).replace(/action-btn/g, 'btn-primary').replace(/onclick="event.stopPropagation();/g, 'onclick="');
       document.getElementById('detailModal').style.display = 'flex';
     }
 
@@ -2854,144 +2009,87 @@
     }
 
     // EXPORT FUNCTIONS
-    function buildExportRows() {
-      const rows = [[
-        'ID Number','First Name','Last Name','Phone','Sales Rep','Branch','Educator','License Code',
-        'Payment Method','Payment Date','Total Fee','Amount Paid','Balance',
-        'Current Stage','Test Result','Test Date','Date Added'
-      ]];
+    function exportToExcel() {
+      if (!checkPermission('export')) {
+        alert('❌ You do not have permission to export data.');
+        return;
+      }
 
-      students.forEach(s => {
-        const stageName = STAGES[s.currentStage]?.name || '';
-        rows.push([
-          s.idNumber || '',
-          s.firstName || '',
-          s.lastName || '',
-          s.phone || '',
-          s.salesRep || '',
-          s.branch || '',
-          s.educator || 'None',
-          s.licenseCode || '',
-          s.paymentMethod || '',
-          s.paymentDate || '',
+      if (students.length === 0) return alert('No students to export!');
+      
+      const headers = ['ID Number', 'First Name', 'Last Name', 'Phone', 'Branch', 'License Code', 'Payment Method', 'Total Fee', 'Amount Paid', 'Balance', 'Current Stage', 'Date Added'];
+      
+      const csv = [
+        headers.join(','),
+        ...students.map(s => [
+          `"${s.idNumber || ''}"`,
+          `"${s.firstName || ''}"`,
+          `"${s.lastName || ''}"`,
+          `"${s.phone || ''}"`,
+          `"${s.branch || ''}"`,
+          `"${s.licenseCode || ''}"`,
+          `"${s.paymentMethod || ''}"`,
           s.totalFee || 0,
           s.amountPaid || 0,
           s.balance || 0,
-          stageName,
-          s.testResult || '',
-          s.testResultDate || '',
-          s.dateAdded || ''
-        ]);
-      });
+          `"${STAGES[s.currentStage]?.name || 'Captured'}"`,
+          `"${s.dateAdded || ''}"`
+        ].join(','))
+      ].join('\n');
 
-      return rows;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Mziyonke_Students_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      showNotification('✅ Exported successfully!');
     }
 
-    function makeWorkbook() {
-      if (!window.XLSX) throw new Error("XLSX library not loaded.");
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(buildExportRows());
-      ws['!cols'] = [
-        {wch:16},{wch:14},{wch:14},{wch:16},{wch:14},{wch:18},{wch:14},{wch:14},
-        {wch:16},{wch:14},{wch:12},{wch:12},{wch:12},
-        {wch:20},{wch:12},{wch:12},{wch:16}
-      ];
-      XLSX.utils.book_append_sheet(wb, ws, "Students");
-      return wb;
-    }
-
-    function exportToExcel() {
-      if (students.length === 0) return alert('No students to export!');
-      const today = new Date().toISOString().split('T')[0];
-      const filename = `Mziyonke_Students_${today}.xlsx`;
-
-      try {
-        const wb = makeWorkbook();
-        XLSX.writeFile(wb, filename);
-        showNotification('✅ Exported .xlsx successfully!');
-      } catch (e) {
-        console.error(e);
-        alert("Export failed. Ensure you are online so the XLSX library can load.");
+    function exportOutstandingToExcel() {
+      const outstandingStudents = students.filter(s => (s.balance || 0) > 0);
+      
+      if (outstandingStudents.length === 0) {
+        alert('No outstanding balances to export!');
+        return;
       }
+
+      const headers = ['First Name', 'Last Name', 'ID Number', 'Phone', 'Branch', 'License Code', 'Total Fee', 'Amount Paid', 'Outstanding Balance'];
+      const csv = [
+        headers.join(','),
+        ...outstandingStudents.map(s => [
+          `"${s.firstName || ''}"`,
+          `"${s.lastName || ''}"`,
+          `"${s.idNumber || ''}"`,
+          `"${s.phone || ''}"`,
+          `"${s.branch || ''}"`,
+          `"${s.licenseCode || ''}"`,
+          s.totalFee || 0,
+          s.amountPaid || 0,
+          s.balance || 0
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Mziyonke_Outstanding_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      showNotification('✅ Outstanding report exported!');
     }
 
     async function connectSaveFolder() {
       if (!window.showDirectoryPicker) {
-        alert("Folder saving needs Chrome/Edge (File System Access API). You can still use Export to Excel.");
+        alert("Folder saving needs Chrome/Edge. Use Export to Excel instead.");
         return;
       }
 
       try {
         saveDirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
         saveFileHandle = await saveDirHandle.getFileHandle("Mziyonke_Students.xlsx", { create: true });
-        await persistFileHandles();
-        await writeXlsxToFile();
-        showNotification("✅ Folder connected. Auto-save is ON.");
+        showNotification("✅ Folder connected!");
       } catch (err) {
         console.error(err);
-        alert("Folder connection cancelled or failed.");
-      }
-    }
-
-    async function writeXlsxToFile() {
-      if (!saveFileHandle) return;
-      let perm = await saveFileHandle.queryPermission({ mode: "readwrite" });
-      if (perm !== "granted") {
-        perm = await saveFileHandle.requestPermission({ mode: "readwrite" });
-        if (perm !== "granted") return;
-      }
-      const wb = makeWorkbook();
-      const arrayBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-      const writable = await saveFileHandle.createWritable();
-      await writable.write(arrayBuffer);
-      await writable.close();
-    }
-
-    function openHandlesDb() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open("mziyonke_fs_handles", 1);
-        request.onupgradeneeded = () => {
-          const db = request.result;
-          db.createObjectStore("handles");
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-    }
-
-    async function persistFileHandles() {
-      try {
-        const db = await openHandlesDb();
-        const tx = db.transaction("handles", "readwrite");
-        tx.objectStore("handles").put(saveDirHandle, "saveDirHandle");
-        tx.objectStore("handles").put(saveFileHandle, "saveFileHandle");
-        await new Promise((res, rej) => {
-          tx.oncomplete = () => res();
-          tx.onerror = () => rej(tx.error);
-          tx.onabort = () => rej(tx.error);
-        });
-      } catch (e) {
-        console.warn("Could not persist handles:", e);
-      }
-    }
-
-    async function restoreFileHandles() {
-      try {
-        const db = await openHandlesDb();
-        const tx = db.transaction("handles", "readonly");
-        const store = tx.objectStore("handles");
-        saveDirHandle = await new Promise((res, rej) => {
-          const r = store.get("saveDirHandle");
-          r.onsuccess = () => res(r.result || null);
-          r.onerror = () => rej(r.error);
-        });
-        saveFileHandle = await new Promise((res, rej) => {
-          const r = store.get("saveFileHandle");
-          r.onsuccess = () => res(r.result || null);
-          r.onerror = () => rej(r.error);
-        });
-      } catch (e) {
-        console.warn("Could not restore handles:", e);
+        alert("Folder connection cancelled.");
       }
     }
 
@@ -3030,315 +2128,6 @@
       if (event.target === testModal) closeTestResultModal();
       if (event.target === outstandingModal) closeOutstandingModal();
     };
-  
-    // PERMISSION CONFIGURATION
-    const PERMISSIONS = {
-      admin: {
-        canView: true,
-        canAdd: true,
-        canEdit: true,
-        canDelete: true,
-        canExport: true,
-        canViewReports: true,
-        canModifyProgress: true,
-        branches: 'all',
-        label: 'Administrator'
-      },
-      manager: {
-        canView: true,
-        canAdd: false,
-        canEdit: false,
-        canDelete: false,
-        canExport: true,
-        canViewReports: true,
-        canModifyProgress: false,
-        branches: 'all',
-        label: 'Manager (View Only)'
-      },
-      staff: {
-        canView: true,
-        canAdd: false,
-        canEdit: false,
-        canDelete: false,
-        canExport: false,
-        canViewReports: false,
-        canModifyProgress: false,
-        branches: 'assigned',
-        label: 'Staff (View Only)'
-      }
-    };
-
-    // AUTHENTICATION FUNCTIONS
-    function initUser() {
-      if (window.CURRENT_USER) {
-        const user = window.CURRENT_USER;
-        const perms = PERMISSIONS[user.role];
-
-        document.getElementById('userName').textContent = user.name;
-        document.getElementById('userRole').textContent = perms.label;
-        document.getElementById('userBranch').textContent = user.branch === 'all' ? 'All Branches' : user.branch;
-
-        // Add role-specific styling
-        const roleBadge = document.getElementById('userRole');
-        roleBadge.classList.add('role-' + user.role);
-
-        // Apply strict role-based restrictions
-        applyStrictRoleRestrictions();
-
-        // Show welcome message
-        showNotification('👋 Welcome ' + user.name + '! ' + perms.label);
-      }
-    }
-
-    function applyStrictRoleRestrictions() {
-      const user = window.CURRENT_USER;
-      const perms = PERMISSIONS[user.role];
-
-      // 1. HIDE CAPTURE SECTION for non-admins
-      if (!perms.canAdd) {
-        const captureSection = document.getElementById('captureSection');
-        if (captureSection) {
-          captureSection.style.display = 'none';
-        }
-
-        // Hide the input section heading
-        const headings = document.querySelectorAll('h2');
-        headings.forEach(h => {
-          if (h.textContent.includes('Capture New Student')) {
-            h.parentElement.style.display = 'none';
-          }
-        });
-      }
-
-      // 2. HIDE ACTION BUTTONS in table for non-admins
-      if (!perms.canEdit && !perms.canDelete && !perms.canModifyProgress) {
-        // Hide entire Actions column header
-        const actionHeaders = document.querySelectorAll('th');
-        actionHeaders.forEach(th => {
-          if (th.textContent.includes('Actions')) {
-            th.style.display = 'none';
-          }
-        });
-
-        // Hide all action cells
-        const actionCells = document.querySelectorAll('.action-buttons, .no-print');
-        actionCells.forEach(cell => {
-          if (cell.closest('td')) {
-            cell.closest('td').style.display = 'none';
-          }
-        });
-      }
-
-      // 3. HIDE EXPORT button for staff
-      if (!perms.canExport) {
-        const exportBtn = document.querySelector('button[onclick="exportToExcel()"]');
-        if (exportBtn) {
-          exportBtn.style.display = 'none';
-        }
-      }
-
-      // 4. HIDE CLEAR ALL DATA button for non-admins
-      if (!perms.canDelete) {
-        const clearBtn = document.querySelector('button[onclick="clearAllData()"]');
-        if (clearBtn) {
-          clearBtn.style.display = 'none';
-        }
-      }
-
-      // 5. BRANCH RESTRICTIONS for staff
-      if (user.role === 'staff') {
-        // Auto-select their branch
-        document.getElementById('currentBranch').value = user.branch;
-        currentBranchFilter = user.branch;
-
-        // Disable branch selector
-        document.getElementById('currentBranch').disabled = true;
-
-        // Hide branch filters
-        document.querySelectorAll('.branch-filters').forEach(el => {
-          el.style.display = 'none';
-        });
-
-        // Hide financial summary for staff (sensitive data)
-        const financialSummary = document.querySelector('.financial-summary');
-        if (financialSummary) {
-          financialSummary.style.display = 'none';
-        }
-
-        // Hide pricing info for staff
-        const pricingWrap = document.querySelector('.pricing-wrap');
-        if (pricingWrap) {
-          pricingWrap.style.display = 'none';
-        }
-      }
-
-      // 6. MANAGER SPECIFIC - Show reports but hide modifications
-      if (user.role === 'manager') {
-        // Keep export button visible
-        // Hide Clear All Data
-        const clearBtn = document.querySelector('button[onclick="clearAllData()"]');
-        if (clearBtn) {
-          clearBtn.style.display = 'none';
-        }
-      }
-
-      console.log('Permissions applied for role:', user.role, perms);
-
-      // Show view-only notice for restricted users
-      if (!perms.canAdd && !perms.canEdit && !perms.canDelete) {
-        const notice = document.getElementById('viewOnlyNotice');
-        if (notice) {
-          notice.style.display = 'block';
-          if (user.role === 'manager') {
-            document.getElementById('viewOnlyText').textContent = 'You can view all data and generate reports, but cannot modify records.';
-          }
-        }
-      }
-    }
-
-    // CHECK PERMISSION helper function
-    function checkPermission(action) {
-      const user = window.CURRENT_USER;
-      if (!user) return false;
-
-      const perms = PERMISSIONS[user.role];
-
-      switch(action) {
-        case 'add': return perms.canAdd;
-        case 'edit': return perms.canEdit;
-        case 'delete': return perms.canDelete;
-        case 'export': return perms.canExport;
-        case 'modifyProgress': return perms.canModifyProgress;
-        case 'viewReports': return perms.canViewReports;
-        default: return false;
-      }
-    }
-
-    // Override functions to check permissions
-    const originalAddStudent = addStudent;
-    addStudent = function() {
-      if (!checkPermission('add')) {
-        alert('❌ You do not have permission to add students. Contact an administrator.');
-        return;
-      }
-      return originalAddStudent.apply(this, arguments);
-    };
-
-    const originalDeleteStudent = deleteStudent;
-    deleteStudent = function(studentId, event) {
-      if (!checkPermission('delete')) {
-        alert('❌ You do not have permission to delete students.');
-        return;
-      }
-      return originalDeleteStudent.apply(this, arguments);
-    };
-
-    const originalSaveEdit = saveEdit;
-    saveEdit = function() {
-      if (!checkPermission('edit')) {
-        alert('❌ You do not have permission to edit students.');
-        return;
-      }
-      return originalSaveEdit.apply(this, arguments);
-    };
-
-    const originalExportToExcel = exportToExcel;
-    exportToExcel = function() {
-      if (!checkPermission('export')) {
-        alert('❌ You do not have permission to export data.');
-        return;
-      }
-      return originalExportToExcel.apply(this, arguments);
-    };
-
-    const originalClearAllData = clearAllData;
-    clearAllData = function() {
-      if (!checkPermission('delete')) {
-        alert('❌ Only administrators can clear all data.');
-        return;
-      }
-      return originalClearAllData.apply(this, arguments);
-    };
-
-    function logout() {
-      if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('mziyonkeSession');
-        window.location.href = 'index.html';
-      }
-    }
-
-    // SYNC DATA - For remote access (placeholder for backend integration)
-    async function syncData() {
-      showNotification('🔄 Syncing data...');
-
-      // In a real implementation, this would:
-      // 1. Upload local changes to server
-      // 2. Download updates from server
-      // 3. Merge changes
-
-      // For now, just refresh from localStorage
-      setTimeout(() => {
-        refreshAllData();
-        showNotification('✅ Data synced successfully!');
-      }, 1000);
-    }
-
-    // Initialize user on load
-    document.addEventListener('DOMContentLoaded', function() {
-      initUser();
-    });
-
-    // Override saveToStorage to include sync timestamp
-    const originalSaveToStorage = saveToStorage;
-    saveToStorage = function() {
-      originalSaveToStorage();
-
-      // Add sync metadata
-      const syncInfo = {
-        lastModified: new Date().toISOString(),
-        modifiedBy: window.CURRENT_USER ? window.CURRENT_USER.name : 'Unknown',
-        device: navigator.userAgent
-      };
-      localStorage.setItem('mziyonkeSyncInfo', JSON.stringify(syncInfo));
-    };
-
-    // GOOGLE SHEETS SYNC CONFIGURATION
-    const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE'; // Replace with your URL
-
-    // Override refreshAllData to include cloud sync
-    async function syncWithGoogleSheets() {
-      if (GOOGLE_SCRIPT_URL.includes('YOUR_GOOGLE_SCRIPT')) {
-        console.log('Google Sheets not configured yet');
-        return;
-      }
-
-      try {
-        showNotification('☁️ Syncing with cloud...');
-
-        // Upload local data
-        for (const student of students) {
-          await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-              ...student,
-              modifiedBy: window.CURRENT_USER ? window.CURRENT_USER.name : 'System'
-            })
-          });
-        }
-
-        showNotification('✅ Cloud sync complete!');
-      } catch (error) {
-        console.error('Sync failed:', error);
-        showNotification('❌ Cloud sync failed', 'error');
-      }
-    }
-
-    // Auto-sync every 5 minutes if online
-    setInterval(() => {
-      if (navigator.onLine && !GOOGLE_SCRIPT_URL.includes('YOUR_GOOGLE_SCRIPT')) {
-        syncWithGoogleSheets();
-      }
-    }, 300000); // 5 minutes
-</script>
+  </script>
 </body>
 </html>
