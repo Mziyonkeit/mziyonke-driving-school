@@ -2030,98 +2030,69 @@
       }).join('');
     }
 
-    function getActionButtons(student) {
-      const buttons = [];
+   function getActionButtons(student) {
+  const buttons = [];
 
-      // Check if user has modify permissions
-      const canModify = checkPermission('modifyProgress');
-      const canDelete = checkPermission('delete');
-      const canEdit = checkPermission('edit');
+  // Check if user has modify permissions
+  const canModify = checkPermission('modifyProgress');
+  const canDelete = checkPermission('delete');
+  const canEdit = checkPermission('edit');
 
-      // If no permissions, return empty (no action buttons)
-      if (!canModify && !canDelete && !canEdit) {
-        return '<span style="color:#999;font-size:0.85em;">View Only</span>';
+  // If no permissions, return empty (no action buttons)
+  if (!canModify && !canDelete && !canEdit) {
+    return '<span style="color:#999;font-size:0.85em;">View Only</span>';
+  }
+
+  const isDepositComplete = (student.amountPaid || 0) >= (student.depositRequired || 0);
+  const isNupay = student.paymentMethod === 'Nupay';
+
+  // Only show progress buttons if user can modify
+  if (canModify) {
+    if (student.currentStage === 1 || (isNupay && (student.balance || 0) > 0)) {
+      if (isNupay) {
+        buttons.push(`<button class="action-btn btn-nupay" onclick="event.stopPropagation();recordNupayPayment('${student.id}')">🔄 Record Debit</button>`);
+      } else {
+        buttons.push(`<button class="action-btn btn-warning" onclick="event.preventDefault(); event.stopPropagation();recordPayment('${student.id}')">💰 Record Payment</button>`);
       }
-
-      const isDepositComplete = (student.amountPaid || 0) >= (student.depositRequired || 0);
-      const isNupay = student.paymentMethod === 'Nupay';
-
-      // Only show progress buttons if user can modify
-      if (canModify) {
-        if (student.currentStage === 1 || (isNupay && (student.balance || 0) > 0)) {
-          if (isNupay) {
-            buttons.push(`<button class="action-btn btn-nupay" onclick="event.stopPropagation();recordNupayPayment('${student.id}')">🔄 Record Debit</button>`);
-          } else {
-            buttons.push(`<button class="action-btn btn-warning" onclick="event.stopPropagation();recordPayment('${student.id}')">💰 Record Payment</button>`);
-          }
-        }
-
-        if (student.currentStage === 2) {
-          buttons.push(`<button class="action-btn btn-info" onclick="event.stopPropagation();startClasses('${student.id}')">👨‍🏫 Start Classes</button>`);
-        }
-
-        if (student.currentStage === 3) {
-          buttons.push(`<button class="action-btn btn-orange" onclick="event.stopPropagation();markReady('${student.id}')">✅ Ready</button>`);
-        }
-
-        if (student.currentStage === 4) {
-          buttons.push(`<button class="action-btn btn-success" onclick="event.stopPropagation();bookTest('${student.id}')">📅 Book Test</button>`);
-        }
-
-        if (student.currentStage === 5) {
-          buttons.push(`<button class="action-btn btn-purple" onclick="event.stopPropagation();openTestResultModal('${student.id}')">📝 Test Results</button>`);
-        }
-      }
-
-      // Always show View button for everyone
-      buttons.push(`<button class="action-btn btn-primary" onclick="event.stopPropagation(); viewDetails('${student.id}')">👁️ View</button>`);
-
-      // Show Edit button if user can edit
-      if (canEdit) {
-        buttons.push(`<button class="action-btn btn-edit" onclick="event.stopPropagation(); openEditModal('${student.id}')">✏️ Edit</button>`);
-      }
-
-      // Show WhatsApp button for managers and admins
-      if (checkPermission('viewReports') || checkPermission('modifyProgress')) {
-        buttons.push(`<button class="action-btn btn-whatsapp" onclick="event.stopPropagation(); openWhatsApp('${encodeURIComponent(student.phone)}', '${encodeURIComponent(student.firstName)}', '${encodeURIComponent(student.balance || 0)}', '${encodeURIComponent(student.currentStage)}', '${encodeURIComponent(student.licenseCode || '')}');" title="Message on WhatsApp">💬 WhatsApp</button>`);
-      }
-
-      // Show delete button only if user can delete
-      if (canDelete) {
-        buttons.push(`<button class="action-btn btn-delete" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation(); handleDeleteClick(this, event);" title="Remove student">🗑️ Delete</button>`);
-      }
-
-      return buttons.join('');
-    }')">🔄 Record Debit</button>`);
-        } else {
-          buttons.push(`<button class="action-btn btn-warning" onclick="recordPayment('${student.id}')">💰 Record Payment</button>`);
-        }
-      }
-      
-      if (student.currentStage === 2) {
-        buttons.push(`<button class="action-btn btn-info" onclick="startClasses('${student.id}')">👨‍🏫 Start Classes</button>`);
-      }
-      
-      if (student.currentStage === 3) {
-        buttons.push(`<button class="action-btn btn-orange" onclick="markReady('${student.id}')">✅ Ready</button>`);
-      }
-      
-      if (student.currentStage === 4) {
-        buttons.push(`<button class="action-btn btn-success" onclick="bookTest('${student.id}')">📅 Book Test</button>`);
-      }
-      
-      if (student.currentStage === 5) {
-        buttons.push(`<button class="action-btn btn-purple" onclick="openTestResultModal('${student.id}')">📝 Test Results</button>`);
-      }
-
-      // Add delete button for all students
-      buttons.push(`<button class="action-btn btn-whatsapp" onclick="event.stopPropagation(); openWhatsApp('${encodeURIComponent(student.phone)}', '${encodeURIComponent(student.firstName)}', '${encodeURIComponent(student.balance || 0)}', '${encodeURIComponent(student.currentStage)}', '${encodeURIComponent(student.licenseCode || '')}');" title="Message on WhatsApp">💬 WhatsApp</button>`);
-
-      buttons.push(`<button class="action-btn btn-delete" onclick="event.stopPropagation(); deleteStudent('${student.id}', event);" title="Remove student">🗑️ Delete</button>`);
-
-      return buttons.join('');
     }
 
+    if (student.currentStage === 2) {
+      buttons.push(`<button class="action-btn btn-info" onclick="event.stopPropagation();startClasses('${student.id}')">👨‍🏫 Start Classes</button>`);
+    }
+
+    if (student.currentStage === 3) {
+      buttons.push(`<button class="action-btn btn-orange" onclick="event.stopPropagation();markReady('${student.id}')">✅ Ready</button>`);
+    }
+
+    if (student.currentStage === 4) {
+      buttons.push(`<button class="action-btn btn-success" onclick="event.stopPropagation();bookTest('${student.id}')">📅 Book Test</button>`);
+    }
+
+    if (student.currentStage === 5) {
+      buttons.push(`<button class="action-btn btn-purple" onclick="event.stopPropagation();openTestResultModal('${student.id}')">📝 Test Results</button>`);
+    }
+  }
+
+  // Always show View button for everyone
+  buttons.push(`<button class="action-btn btn-primary" onclick="event.stopPropagation(); viewDetails('${student.id}')">👁️ View</button>`);
+
+  // Show Edit button if user can edit
+  if (canEdit) {
+    buttons.push(`<button class="action-btn btn-edit" onclick="event.stopPropagation(); openEditModal('${student.id}')">✏️ Edit</button>`);
+  }
+
+  // Show WhatsApp button for managers and admins
+  if (checkPermission('viewReports') || checkPermission('modifyProgress')) {
+    buttons.push(`<button class="action-btn btn-whatsapp" onclick="event.stopPropagation(); openWhatsApp('${encodeURIComponent(student.phone)}', '${encodeURIComponent(student.firstName)}', '${encodeURIComponent(student.balance || 0)}', '${encodeURIComponent(student.currentStage)}', '${encodeURIComponent(student.licenseCode || '')}');" title="Message on WhatsApp">💬 WhatsApp</button>`);
+  }
+
+  // Show delete button only if user can delete
+  if (canDelete) {
+    buttons.push(`<button class="action-btn btn-delete" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation(); handleDeleteClick(this, event);" title="Remove student">🗑️ Delete</button>`);
+  }
+
+  return buttons.join('');
+}
             
     // SAFE FIND STUDENT - handles various ID formats
     function findStudentById(studentId) {
