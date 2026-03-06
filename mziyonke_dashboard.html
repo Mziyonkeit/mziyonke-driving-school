@@ -383,6 +383,15 @@
     .btn-success:hover{background:#38a169;transform:translateY(-2px)}
     .btn-danger{background:#f56565;color:#fff}
     .btn-delete{background:#dc3545;color:#fff;font-size:.8em;padding:6px 12px;cursor:pointer;position:relative;z-index:10}
+    .view-only-indicator {
+      background:#e9ecef;
+      color:#6c757d;
+      padding:15px;
+      border-radius:10px;
+      text-align:center;
+      margin-bottom:20px;
+      border-left:4px solid #17a2b8;
+    }
     .btn-delete:hover{background:#c82333;transform:translateY(-2px)}
     .btn-danger:hover{background:#e53e3e;transform:translateY(-2px)}
     .btn-warning{background:#ed8936;color:#fff}
@@ -869,6 +878,11 @@
     </div>
 
     <div class="content">
+      <!-- VIEW ONLY NOTICE -->
+      <div id="viewOnlyNotice" class="view-only-indicator" style="display:none;">
+        <strong>👁️ VIEW ONLY MODE</strong><br>
+        <span id="viewOnlyText">You can view data but cannot make changes. Contact an administrator for modifications.</span>
+      </div>
 
       <!-- PRICING INFO -->
       <div class="pricing-wrap">
@@ -1199,7 +1213,7 @@
               <th>Test Result</th>
               <th>Sales Rep</th>
               <th>Date Added</th>
-              <th class="no-print">Actions</th>
+              <th class="no-print" id="actionsHeader">Actions</th>
             </tr>
           </thead>
           <tbody id="studentsTableBody"></tbody>
@@ -1942,6 +1956,9 @@
         return;
       }
 
+      // Check user permissions for column visibility
+      const canModify = checkPermission('modifyProgress') || checkPermission('edit') || checkPermission('delete');
+
       tbody.innerHTML = data.map(student => {
         const stage = STAGES[student.currentStage] || STAGES[1];
         const isDepositComplete = (student.amountPaid || 0) >= (student.depositRequired || 0);
@@ -2015,12 +2032,67 @@
 
     function getActionButtons(student) {
       const buttons = [];
+
+      // Check if user has modify permissions
+      const canModify = checkPermission('modifyProgress');
+      const canDelete = checkPermission('delete');
+      const canEdit = checkPermission('edit');
+
+      // If no permissions, return empty (no action buttons)
+      if (!canModify && !canDelete && !canEdit) {
+        return '<span style="color:#999;font-size:0.85em;">View Only</span>';
+      }
+
       const isDepositComplete = (student.amountPaid || 0) >= (student.depositRequired || 0);
       const isNupay = student.paymentMethod === 'Nupay';
 
-      if (student.currentStage === 1 || (isNupay && (student.balance || 0) > 0)) {
-        if (isNupay) {
-          buttons.push(`<button class="action-btn btn-nupay" onclick="recordNupayPayment('${student.id}')">🔄 Record Debit</button>`);
+      // Only show progress buttons if user can modify
+      if (canModify) {
+        if (student.currentStage === 1 || (isNupay && (student.balance || 0) > 0)) {
+          if (isNupay) {
+            buttons.push(`<button class="action-btn btn-nupay" onclick="event.stopPropagation();recordNupayPayment('${student.id}')">🔄 Record Debit</button>`);
+          } else {
+            buttons.push(`<button class="action-btn btn-warning" onclick="event.stopPropagation();recordPayment('${student.id}')">💰 Record Payment</button>`);
+          }
+        }
+
+        if (student.currentStage === 2) {
+          buttons.push(`<button class="action-btn btn-info" onclick="event.stopPropagation();startClasses('${student.id}')">👨‍🏫 Start Classes</button>`);
+        }
+
+        if (student.currentStage === 3) {
+          buttons.push(`<button class="action-btn btn-orange" onclick="event.stopPropagation();markReady('${student.id}')">✅ Ready</button>`);
+        }
+
+        if (student.currentStage === 4) {
+          buttons.push(`<button class="action-btn btn-success" onclick="event.stopPropagation();bookTest('${student.id}')">📅 Book Test</button>`);
+        }
+
+        if (student.currentStage === 5) {
+          buttons.push(`<button class="action-btn btn-purple" onclick="event.stopPropagation();openTestResultModal('${student.id}')">📝 Test Results</button>`);
+        }
+      }
+
+      // Always show View button for everyone
+      buttons.push(`<button class="action-btn btn-primary" onclick="event.stopPropagation(); viewDetails('${student.id}')">👁️ View</button>`);
+
+      // Show Edit button if user can edit
+      if (canEdit) {
+        buttons.push(`<button class="action-btn btn-edit" onclick="event.stopPropagation(); openEditModal('${student.id}')">✏️ Edit</button>`);
+      }
+
+      // Show WhatsApp button for managers and admins
+      if (checkPermission('viewReports') || checkPermission('modifyProgress')) {
+        buttons.push(`<button class="action-btn btn-whatsapp" onclick="event.stopPropagation(); openWhatsApp('${encodeURIComponent(student.phone)}', '${encodeURIComponent(student.firstName)}', '${encodeURIComponent(student.balance || 0)}', '${encodeURIComponent(student.currentStage)}', '${encodeURIComponent(student.licenseCode || '')}');" title="Message on WhatsApp">💬 WhatsApp</button>`);
+      }
+
+      // Show delete button only if user can delete
+      if (canDelete) {
+        buttons.push(`<button class="action-btn btn-delete" data-student-id="${encodeURIComponent(student.id)}" onclick="event.stopPropagation(); handleDeleteClick(this, event);" title="Remove student">🗑️ Delete</button>`);
+      }
+
+      return buttons.join('');
+    }')">🔄 Record Debit</button>`);
         } else {
           buttons.push(`<button class="action-btn btn-warning" onclick="recordPayment('${student.id}')">💰 Record Payment</button>`);
         }
@@ -2988,26 +3060,121 @@
       if (event.target === outstandingModal) closeOutstandingModal();
     };
   
+    // PERMISSION CONFIGURATION
+    const PERMISSIONS = {
+      admin: {
+        canView: true,
+        canAdd: true,
+        canEdit: true,
+        canDelete: true,
+        canExport: true,
+        canViewReports: true,
+        canModifyProgress: true,
+        branches: 'all',
+        label: 'Administrator'
+      },
+      manager: {
+        canView: true,
+        canAdd: false,
+        canEdit: false,
+        canDelete: false,
+        canExport: true,
+        canViewReports: true,
+        canModifyProgress: false,
+        branches: 'all',
+        label: 'Manager (View Only)'
+      },
+      staff: {
+        canView: true,
+        canAdd: false,
+        canEdit: false,
+        canDelete: false,
+        canExport: false,
+        canViewReports: false,
+        canModifyProgress: false,
+        branches: 'assigned',
+        label: 'Staff (View Only)'
+      }
+    };
+
     // AUTHENTICATION FUNCTIONS
     function initUser() {
       if (window.CURRENT_USER) {
-        document.getElementById('userName').textContent = window.CURRENT_USER.name;
-        document.getElementById('userRole').textContent = window.CURRENT_USER.role.toUpperCase();
-        document.getElementById('userBranch').textContent = window.CURRENT_USER.branch === 'all' ? 'All Branches' : window.CURRENT_USER.branch;
+        const user = window.CURRENT_USER;
+        const perms = PERMISSIONS[user.role];
+
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userRole').textContent = perms.label;
+        document.getElementById('userBranch').textContent = user.branch === 'all' ? 'All Branches' : user.branch;
 
         // Add role-specific styling
         const roleBadge = document.getElementById('userRole');
-        roleBadge.classList.add('role-' + window.CURRENT_USER.role);
+        roleBadge.classList.add('role-' + user.role);
 
-        // Apply role-based restrictions
-        applyRoleRestrictions();
+        // Apply strict role-based restrictions
+        applyStrictRoleRestrictions();
+
+        // Show welcome message
+        showNotification('👋 Welcome ' + user.name + '! ' + perms.label);
       }
     }
 
-    function applyRoleRestrictions() {
+    function applyStrictRoleRestrictions() {
       const user = window.CURRENT_USER;
+      const perms = PERMISSIONS[user.role];
 
-      // Staff can only see their branch
+      // 1. HIDE CAPTURE SECTION for non-admins
+      if (!perms.canAdd) {
+        const captureSection = document.getElementById('captureSection');
+        if (captureSection) {
+          captureSection.style.display = 'none';
+        }
+
+        // Hide the input section heading
+        const headings = document.querySelectorAll('h2');
+        headings.forEach(h => {
+          if (h.textContent.includes('Capture New Student')) {
+            h.parentElement.style.display = 'none';
+          }
+        });
+      }
+
+      // 2. HIDE ACTION BUTTONS in table for non-admins
+      if (!perms.canEdit && !perms.canDelete && !perms.canModifyProgress) {
+        // Hide entire Actions column header
+        const actionHeaders = document.querySelectorAll('th');
+        actionHeaders.forEach(th => {
+          if (th.textContent.includes('Actions')) {
+            th.style.display = 'none';
+          }
+        });
+
+        // Hide all action cells
+        const actionCells = document.querySelectorAll('.action-buttons, .no-print');
+        actionCells.forEach(cell => {
+          if (cell.closest('td')) {
+            cell.closest('td').style.display = 'none';
+          }
+        });
+      }
+
+      // 3. HIDE EXPORT button for staff
+      if (!perms.canExport) {
+        const exportBtn = document.querySelector('button[onclick="exportToExcel()"]');
+        if (exportBtn) {
+          exportBtn.style.display = 'none';
+        }
+      }
+
+      // 4. HIDE CLEAR ALL DATA button for non-admins
+      if (!perms.canDelete) {
+        const clearBtn = document.querySelector('button[onclick="clearAllData()"]');
+        if (clearBtn) {
+          clearBtn.style.display = 'none';
+        }
+      }
+
+      // 5. BRANCH RESTRICTIONS for staff
       if (user.role === 'staff') {
         // Auto-select their branch
         document.getElementById('currentBranch').value = user.branch;
@@ -3021,25 +3188,106 @@
           el.style.display = 'none';
         });
 
-        // Restrict capture form to their branch only
-        const branchSelect = document.getElementById('branch');
-        if (branchSelect) {
-          Array.from(branchSelect.options).forEach(opt => {
-            if (opt.value && opt.value !== user.branch) {
-              opt.style.display = 'none';
-            }
-          });
-          branchSelect.value = user.branch;
-          branchSelect.disabled = true;
+        // Hide financial summary for staff (sensitive data)
+        const financialSummary = document.querySelector('.financial-summary');
+        if (financialSummary) {
+          financialSummary.style.display = 'none';
         }
 
-        showNotification('👋 Welcome ' + user.name + '! You are viewing ' + user.branch + ' branch.');
-      } else if (user.role === 'manager') {
-        showNotification('👋 Welcome Manager! You have full access.');
-      } else if (user.role === 'admin') {
-        showNotification('👋 Welcome Administrator! You have full system access.');
+        // Hide pricing info for staff
+        const pricingWrap = document.querySelector('.pricing-wrap');
+        if (pricingWrap) {
+          pricingWrap.style.display = 'none';
+        }
+      }
+
+      // 6. MANAGER SPECIFIC - Show reports but hide modifications
+      if (user.role === 'manager') {
+        // Keep export button visible
+        // Hide Clear All Data
+        const clearBtn = document.querySelector('button[onclick="clearAllData()"]');
+        if (clearBtn) {
+          clearBtn.style.display = 'none';
+        }
+      }
+
+      console.log('Permissions applied for role:', user.role, perms);
+
+      // Show view-only notice for restricted users
+      if (!perms.canAdd && !perms.canEdit && !perms.canDelete) {
+        const notice = document.getElementById('viewOnlyNotice');
+        if (notice) {
+          notice.style.display = 'block';
+          if (user.role === 'manager') {
+            document.getElementById('viewOnlyText').textContent = 'You can view all data and generate reports, but cannot modify records.';
+          }
+        }
       }
     }
+
+    // CHECK PERMISSION helper function
+    function checkPermission(action) {
+      const user = window.CURRENT_USER;
+      if (!user) return false;
+
+      const perms = PERMISSIONS[user.role];
+
+      switch(action) {
+        case 'add': return perms.canAdd;
+        case 'edit': return perms.canEdit;
+        case 'delete': return perms.canDelete;
+        case 'export': return perms.canExport;
+        case 'modifyProgress': return perms.canModifyProgress;
+        case 'viewReports': return perms.canViewReports;
+        default: return false;
+      }
+    }
+
+    // Override functions to check permissions
+    const originalAddStudent = addStudent;
+    addStudent = function() {
+      if (!checkPermission('add')) {
+        alert('❌ You do not have permission to add students. Contact an administrator.');
+        return;
+      }
+      return originalAddStudent.apply(this, arguments);
+    };
+
+    const originalDeleteStudent = deleteStudent;
+    deleteStudent = function(studentId, event) {
+      if (!checkPermission('delete')) {
+        alert('❌ You do not have permission to delete students.');
+        return;
+      }
+      return originalDeleteStudent.apply(this, arguments);
+    };
+
+    const originalSaveEdit = saveEdit;
+    saveEdit = function() {
+      if (!checkPermission('edit')) {
+        alert('❌ You do not have permission to edit students.');
+        return;
+      }
+      return originalSaveEdit.apply(this, arguments);
+    };
+
+    const originalExportToExcel = exportToExcel;
+    exportToExcel = function() {
+      if (!checkPermission('export')) {
+        alert('❌ You do not have permission to export data.');
+        return;
+      }
+      return originalExportToExcel.apply(this, arguments);
+    };
+
+    const originalClearAllData = clearAllData;
+    clearAllData = function() {
+      if (!checkPermission('delete')) {
+        alert('❌ Only administrators can clear all data.');
+        return;
+      }
+      return originalClearAllData.apply(this, arguments);
+    };
 
     function logout() {
       if (confirm('Are you sure you want to logout?')) {

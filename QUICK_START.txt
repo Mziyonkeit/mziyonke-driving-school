@@ -1,0 +1,55 @@
+
+╔════════════════════════════════════════════════════════════╗
+║     MZIYONKE DRIVING SCHOOL - GITHUB PAGES SETUP          ║
+╚════════════════════════════════════════════════════════════╝
+
+🌐 YOUR WEBSITE URL WILL BE:
+   https://[YOUR-USERNAME].github.io/mziyonke-driving-school/
+
+📋 QUICK SETUP (5 Minutes):
+
+1. CREATE ACCOUNT
+   → https://github.com/join
+
+2. CREATE REPOSITORY  
+   → https://github.com/new
+   → Name: mziyonke-driving-school
+   → Select: Public
+   → Check: Add README
+
+3. UPLOAD FILES
+   → Click "Add file" → "Upload files"
+   → Upload ALL files from zip
+   → Click "Commit changes"
+
+4. ENABLE PAGES
+   → Settings → Pages
+   → Source: Deploy from branch
+   → Branch: main / (root)
+   → Save
+
+5. DONE! 🎉
+   → Wait 2 minutes
+   → Visit your URL
+
+🔑 DEFAULT LOGIN:
+   Username: admin
+   Password: admin2024
+
+⚠️  IMPORTANT: Change passwords after setup!
+
+📱 SYSTEM FEATURES:
+   ✅ Secure login
+   ✅ Role-based access
+   ✅ Multi-branch support
+   ✅ Payment tracking
+   ✅ WhatsApp messaging
+   ✅ Financial reports
+   ✅ Works on all devices
+
+🆘 NEED HELP?
+   See SETUP_INSTRUCTIONS.md for detailed steps
+
+╔════════════════════════════════════════════════════════════╗
+║  Your system will be LIVE on the internet for FREE! 🚀    ║
+╚════════════════════════════════════════════════════════════╝

@@ -108,7 +108,7 @@
   <div class="login-container">
     <img src="images/Mziyonke_logo.jpeg" alt="Logo" class="login-logo" onerror="this.style.display='none'">
     <h1>Mziyonke Driving School</h1>
-    <p>Student Management System</p>
+    <p>Student Management System</p><p style="font-size:0.85em;color:#666;margin-top:10px;">👑 Admin: Full Access | 💼 Manager: View & Reports | 👤 Staff: View Only</p>
 
     <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
       <div class="form-group">
@@ -149,37 +149,37 @@
       },
       'manager': { 
         password: 'manager2024', 
-        role: 'manager', 
+        role: 'manager', // Can view all + reports, CANNOT modify 
         name: 'General Manager',
         branch: 'all'
       },
       'goldspot': { 
         password: 'gold2024', 
-        role: 'staff', 
+        role: 'staff', // View assigned branch ONLY, no modifications 
         name: 'Gold Spot Staff',
         branch: 'Gold Spot'
       },
       'chris': { 
         password: 'chris2024', 
-        role: 'staff', 
+        role: 'staff', // View assigned branch ONLY, no modifications 
         name: 'Chris Hani Staff',
         branch: 'Chris Hani'
       },
       'bara': { 
         password: 'bara2024', 
-        role: 'staff', 
+        role: 'staff', // View assigned branch ONLY, no modifications 
         name: 'Bara Staff',
         branch: 'Bara'
       },
       'protea': { 
         password: 'protea2024', 
-        role: 'staff', 
+        role: 'staff', // View assigned branch ONLY, no modifications 
         name: 'Protea Staff',
         branch: 'Protea Glen'
       },
       'dawn': { 
         password: 'dawn2024', 
-        role: 'staff', 
+        role: 'staff', // View assigned branch ONLY, no modifications 
         name: 'Dawn Park Staff',
         branch: 'Dawn Park'
       }
