@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,13 +101,95 @@
     .role-admin { background: #dc3545; color: white; }
     .role-manager { background: #28a745; color: white; }
     .role-staff { background: #17a2b8; color: white; }
+
+    /* System Selection Styles */
+    .system-selection {
+      display: none;
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    .system-card {
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      padding: 25px;
+      margin: 15px 0;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .system-card:hover {
+      border-color: #667eea;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(102,126,234,0.2);
+    }
+
+    .system-card.selected {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    .system-card h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 1.4em;
+    }
+
+    .system-card p {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .system-icon {
+      font-size: 3em;
+      margin-bottom: 15px;
+    }
+
+    .continue-btn {
+      width: 100%;
+      padding: 14px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .continue-btn:hover {
+      background: #218838;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: #667eea;
+      cursor: pointer;
+      margin-top: 15px;
+      font-size: 0.9em;
+    }
+
+    .back-btn:hover {
+      text-decoration: underline;
+    }
   </style>
+<base target="_blank">
 </head>
 <body>
-  <div class="login-container">
+  <!-- LOGIN SCREEN -->
+  <div class="login-container" id="loginScreen">
     <img src="images/Mziyonke_logo.jpeg" alt="Logo" class="login-logo" onerror="this.style.display='none'">
     <h1>Mziyonke Driving School</h1>
-    <p>Student Management System</p><p style="font-size:0.85em;color:#666;margin-top:10px;">👑 Admin: Full Access | 💼 Manager: View & Reports | 👤 Staff: View Only</p>
+    <p>Student Management System</p>
+    <p style="font-size:0.85em;color:#666;margin-top:10px;">👑 Admin: Full Access | 💼 Manager: View & Reports | 👤 Staff: View Only</p>
 
     <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
       <div class="form-group">
@@ -138,52 +219,44 @@
     </form>
   </div>
 
+  <!-- SYSTEM SELECTION SCREEN -->
+  <div class="system-selection" id="systemSelection">
+    <img src="images/Mziyonke_logo.jpeg" alt="Logo" style="max-width: 120px; margin-bottom: 20px;" onerror="this.style.display='none'">
+    <h2 style="margin-bottom: 10px; color: #333;">Select System</h2>
+    <p style="color: #666; margin-bottom: 30px;">Choose which system to access</p>
+
+    <div class="system-card" id="learnersCard" onclick="selectSystem('learners')">
+      <div class="system-icon">📚</div>
+      <h3>Learner's License System</h3>
+      <p>Manage students preparing for learner's license test<br>
+      <small>Stages: Registration → Payment → Classes → Test Booking → Results</small></p>
+    </div>
+
+    <div class="system-card" id="driversCard" onclick="selectSystem('drivers')">
+      <div class="system-icon">🚗</div>
+      <h3>Driver's License System</h3>
+      <p>Manage students who passed learner's and now training for driver's license<br>
+      <small>Stages: Instructor Assignment → Training → Booking → Driving Test → License Issue</small></p>
+    </div>
+
+    <button class="continue-btn" id="continueBtn" onclick="continueToSystem()">Continue →</button>
+    <button class="back-btn" onclick="backToLogin()">← Back to Login</button>
+  </div>
+
   <script>
-    // USER ACCOUNTS - In production, move this to server-side!
+    // USER ACCOUNTS
     const USERS = {
-      'admin': { 
-        password: 'admin2024', 
-        role: 'admin', 
-        name: 'Administrator',
-        branch: 'all'
-      },
-      'manager': { 
-        password: 'manager2024', 
-        role: 'manager', // Can view all + reports, CANNOT modify 
-        name: 'General Manager',
-        branch: 'all'
-      },
-      'goldspot': { 
-        password: 'gold2024', 
-        role: 'staff', // View assigned branch ONLY, no modifications 
-        name: 'Gold Spot Staff',
-        branch: 'Gold Spot'
-      },
-      'chris': { 
-        password: 'chris2024', 
-        role: 'staff', // View assigned branch ONLY, no modifications 
-        name: 'Chris Hani Staff',
-        branch: 'Chris Hani'
-      },
-      'bara': { 
-        password: 'bara2024', 
-        role: 'staff', // View assigned branch ONLY, no modifications 
-        name: 'Bara Staff',
-        branch: 'Bara'
-      },
-      'protea': { 
-        password: 'protea2024', 
-        role: 'staff', // View assigned branch ONLY, no modifications 
-        name: 'Protea Staff',
-        branch: 'Protea Glen'
-      },
-      'dawn': { 
-        password: 'dawn2024', 
-        role: 'staff', // View assigned branch ONLY, no modifications 
-        name: 'Dawn Park Staff',
-        branch: 'Dawn Park'
-      }
+      'admin': { password: 'admin2024', role: 'admin', name: 'Administrator', branch: 'all' },
+      'manager': { password: 'manager2024', role: 'manager', name: 'General Manager', branch: 'all' },
+      'goldspot': { password: 'gold2024', role: 'staff', name: 'Gold Spot Staff', branch: 'Gold Spot' },
+      'chris': { password: 'chris2024', role: 'staff', name: 'Chris Hani Staff', branch: 'Chris Hani' },
+      'bara': { password: 'bara2024', role: 'staff', name: 'Bara Staff', branch: 'Bara' },
+      'protea': { password: 'protea2024', role: 'staff', name: 'Protea Staff', branch: 'Protea Glen' },
+      'dawn': { password: 'dawn2024', role: 'staff', name: 'Dawn Park Staff', branch: 'Dawn Park' }
     };
+
+    let currentUser = null;
+    let selectedSystem = null;
 
     function handleLogin() {
       const username = document.getElementById('username').value.trim().toLowerCase();
@@ -193,8 +266,7 @@
       const user = USERS[username];
 
       if (user && user.password === password) {
-        // Store session
-        const session = {
+        currentUser = {
           username: username,
           name: user.name,
           role: user.role,
@@ -202,13 +274,52 @@
           loginTime: new Date().toISOString()
         };
 
-        localStorage.setItem('mziyonkeSession', JSON.stringify(session));
-
-        // Redirect to main system
-        window.location.href = 'mziyonke_dashboard.html';
+        // Show system selection
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('systemSelection').style.display = 'block';
+        
+        // Store session temporarily
+        sessionStorage.setItem('mziyonkeTempSession', JSON.stringify(currentUser));
       } else {
         document.getElementById('errorMsg').style.display = 'block';
       }
+    }
+
+    function selectSystem(system) {
+      selectedSystem = system;
+      
+      // Visual selection
+      document.getElementById('learnersCard').classList.remove('selected');
+      document.getElementById('driversCard').classList.remove('selected');
+      
+      if (system === 'learners') {
+        document.getElementById('learnersCard').classList.add('selected');
+      } else {
+        document.getElementById('driversCard').classList.add('selected');
+      }
+      
+      document.getElementById('continueBtn').style.display = 'block';
+    }
+
+    function continueToSystem() {
+      if (!selectedSystem) return;
+      
+      // Store final session with system choice
+      currentUser.system = selectedSystem;
+      localStorage.setItem('mziyonkeSession', JSON.stringify(currentUser));
+      
+      // Redirect to appropriate system
+      if (selectedSystem === 'learners') {
+        window.location.href = 'mziyonke_dashboard.html';
+      } else {
+        window.location.href = 'mziyonke_drivers_system.html';
+      }
+    }
+
+    function backToLogin() {
+      document.getElementById('systemSelection').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'block';
+      sessionStorage.removeItem('mziyonkeTempSession');
     }
 
     // Check if already logged in
@@ -219,9 +330,13 @@
       const now = new Date();
       const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
 
-      // Auto-login if session is less than 8 hours old
       if (hoursSinceLogin < 8) {
-        window.location.href = 'mziyonke_dashboard.html';
+        // Redirect to appropriate system based on last selection
+        if (session.system === 'drivers') {
+          window.location.href = 'mziyonke_drivers_system.html';
+        } else {
+          window.location.href = 'mziyonke_dashboard.html';
+        }
       } else {
         localStorage.removeItem('mziyonkeSession');
       }
