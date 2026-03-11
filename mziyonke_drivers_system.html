@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mziyonke Driving School - Driver's License System</title>
+
+  <!-- AUTHENTICATION CHECK -->
+  <script>
+    const sessionData = localStorage.getItem('mziyonkeSession');
+    if (!sessionData) {
+      window.location.href = 'index.html';
+    } else {
+      const session = JSON.parse(sessionData);
+      if (session.system !== 'drivers') {
+        window.location.href = 'index.html';
+      }
+      const loginTime = new Date(session.loginTime);
+      const now = new Date();
+      const hoursSinceLogin = (now - loginTime) / (1000 * 60 * 60);
+      if (hoursSinceLogin >= 8) {
+        localStorage.removeItem('mziyonkeSession');
+        window.location.href = 'index.html';
+      }
+      window.CURRENT_USER = session;
+    }
+  </script>
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#2c5aa0 0%,#1e3d6f 100%);min-height:100vh;padding:20px}
+    .container{max-width:1400px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+    .header{background:linear-gradient(135deg,#2c5aa0 0%,#1e3d6f 100%);color:#fff;padding:30px;text-align:center}
+    .header h1{font-size:2.2em;margin-bottom:10px}
+    .system-badge{display:inline-block;background:#28a745;color:#fff;padding:5px 15px;border-radius:20px;font-size:0.85em;margin-bottom:15px}
+    .stage-legend{display:flex;justify-content:center;gap:15px;margin-top:20px;flex-wrap:wrap}
+    .legend-item{display:flex;align-items:center;gap:5px;padding:8px 12px;background:rgba(255,255,255,.15);border-radius:20px;font-size:.85em}
+    .legend-color{width:12px;height:12px;border-radius:50%}
+    .content{padding:30px}
+    
+    .user-bar{background:#1a1a2e;color:white;padding:10px 30px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+    .user-info{display:flex;align-items:center;gap:15px}
+    .role-badge{padding:3px 10px;border-radius:12px;font-size:0.8em}
+    .role-admin{background:#dc3545}
+    .role-manager{background:#28a745}
+    .role-staff{background:#17a2b8}
+    .action-btns{display:flex;gap:10px}
+    .btn-sync{background:#17a2b8;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer}
+    .btn-sync:hover{background:#138496}
+    .btn-logout{background:#dc3545;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer}
+    .btn-logout:hover{background:#c82333}
+    .btn-learners{background:#6f42c1;color:white;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;text-decoration:none}
+    .btn-learners:hover{background:#5a32a3}
+
+    .stage-overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:30px}
+    .stage-card{background:#f8f9fa;padding:20px;border-radius:15px;text-align:center;border-left:5px solid #dee2e6;transition:all 0.3s}
+    .stage-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,.1)}
+    .stage-card.active{border-left-color:#28a745;background:#d4edda}
+    .stage-card.pending{border-left-color:#ffc107;background:#fff3cd}
+    .stage-card.complete{border-left-color:#17a2b8;background:#d1ecf1}
+    .stage-number{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;margin:0 auto 10px;font-size:1.2em}
+    .stage-1 .stage-number{background:#6c757d}
+    .stage-2 .stage-number{background:#fd7e14}
+    .stage-3 .stage-number{background:#17a2b8}
+    .stage-4 .stage-number{background:#28a745}
+    .stage-5 .stage-number{background:#6f42c1}
+    .stage-title{font-weight:700;margin-bottom:5px;color:#333}
+    .stage-desc{font-size:0.85em;color:#666}
+
+    .import-section{background:#e8f5e9;border:2px solid #4caf50;padding:20px;border-radius:15px;margin-bottom:30px;text-align:center}
+    .btn-import{background:#4caf50;color:#fff;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-size:1em}
+    .btn-import:hover{background:#45a049}
+
+    .branch-filter{background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .branch-btn{padding:8px 16px;border:2px solid #2c5aa0;background:#fff;color:#2c5aa0;border-radius:20px;cursor:pointer;font-size:.9em;transition:all .3s}
+    .branch-btn.active{background:#2c5aa0;color:#fff}
+
+    .list-section{margin-bottom:30px}
+    .list-header{background:#f8f9fa;padding:15px 20px;border-radius:10px 10px 0 0;border-left:5px solid #2c5aa0;display:flex;justify-content:space-between;align-items:center}
+    .list-title{font-weight:700;color:#2c5aa0;font-size:1.2em}
+    .student-count{background:#2c5aa0;color:#fff;padding:3px 10px;border-radius:15px;font-size:0.85em}
+    .list-body{background:#fff;border:1px solid #dee2e6;border-top:none;border-radius:0 0 10px 10px;max-height:400px;overflow-y:auto}
+    .student-row{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;border-bottom:1px solid #eee}
+    .student-row:hover{background:#f8f9fa}
+    .student-info{flex:1}
+    .student-name{font-weight:600;color:#333}
+    .student-details{font-size:0.85em;color:#666;margin-top:3px}
+    .student-actions{display:flex;gap:8px}
+    .btn-action{padding:6px 12px;border:none;border-radius:5px;font-size:0.85em;cursor:pointer}
+    .btn-ready{background:#28a745;color:#fff}
+    .btn-book{background:#17a2b8;color:#fff}
+    .btn-result{background:#6f42c1;color:#fff}
+    .btn-whatsapp{background:#25d366;color:#fff}
+    .btn-complete{background:#dc3545;color:#fff}
+
+    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center}
+    .modal-content{background:#fff;padding:30px;border-radius:15px;width:90%;max-width:600px;max-height:85vh;overflow-y:auto;animation:slideIn .3s}
+    @keyframes slideIn{from{transform:translateY(-50px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #eee}
+    .close{font-size:1.5em;cursor:pointer;color:#999}
+    .close:hover{color:#333}
+    .form-group{margin-bottom:15px}
+    .form-group label{display:block;margin-bottom:5px;font-weight:600;color:#555}
+    .form-group input,.form-group select{width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:5px;font-size:1em}
+    .form-group input:focus,.form-group select:focus{outline:none;border-color:#2c5aa0}
+    .button-group{display:flex;gap:10px;justify-content:center;margin-top:20px}
+    .btn-primary{background:#2c5aa0;color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1em}
+    .btn-primary:hover{background:#1e3d6f}
+    .btn-secondary{background:#6c757d;color:#fff;padding:12px 24px;border:none;border-radius:8px;cursor:pointer;font-size:1em}
+    .btn-secondary:hover{background:#5a6268}
+
+    .booking-info{background:#d4edda;padding:15px;border-radius:8px;margin:10px 0;border-left:4px solid #28a745}
+    .booking-info.pending{background:#fff3cd;border-left-color:#ffc107}
+
+    .sync-status{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#e3f2fd;border-radius:20px;font-size:.9em;color:#1976d2;font-weight:600;margin-left:10px}
+    .sync-status.syncing{background:#fff3cd;color:#f57c00}
+    .sync-status.error{background:#ffebee;color:#c62828}
+
+    .hidden{display:none !important}
+    @media print{body{background:#fff}.no-print{display:none !important}}
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="system-badge">🚗 DRIVER'S LICENSE SYSTEM</div>
+      <h1>Driver's License Training & Testing</h1>
+      <p>Manage students from learner's pass to driver's license issue</p>
+
+      <div class="stage-legend">
+        <div class="legend-item"><div class="legend-color" style="background:#6c757d"></div><span>Stage 1: Instructor Assignment</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#fd7e14"></div><span>Stage 2: Training</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#17a2b8"></div><span>Stage 3: Ready for Booking</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#28a745"></div><span>Stage 4: Booked</span></div>
+        <div class="legend-item"><div class="legend-color" style="background:#6f42c1"></div><span>Stage 5: Test Results & License</span></div>
+      </div>
+    </div>
+
+    <div class="user-bar">
+      <div class="user-info">
+        <span>👤 <strong id="userName">Loading...</strong></span>
+        <span id="userRole" class="role-badge">Role</span>
+        <span id="userBranch">Branch</span>
+        <div id="syncStatus" class="sync-status" style="display:none;">
+          <span id="syncIcon">☁️</span>
+          <span id="syncText">Synced</span>
+        </div>
+      </div>
+      <div class="action-btns">
+        <a href="mziyonke_dashboard.html" class="btn-learners">📚 Learner's System</a>
+        <button onclick="syncData()" class="btn-sync">🔄 Sync</button>
+        <button onclick="logout()" class="btn-logout">🚪 Logout</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="stage-overview">
+        <div class="stage-card stage-1" id="stage1Card">
+          <div class="stage-number">1</div>
+          <div class="stage-title">Instructor Assignment</div>
+          <div class="stage-desc">Assign passed learner's students to driving instructors by branch</div>
+        </div>
+        <div class="stage-card stage-2" id="stage2Card">
+          <div class="stage-number">2</div>
+          <div class="stage-title">Training</div>
+          <div class="stage-desc">Instructor trains and determines readiness for test</div>
+        </div>
+        <div class="stage-card stage-3" id="stage3Card">
+          <div class="stage-number">3</div>
+          <div class="stage-title">Ready for Booking</div>
+          <div class="stage-desc">Students approved by instructor, awaiting test booking</div>
+        </div>
+        <div class="stage-card stage-4" id="stage4Card">
+          <div class="stage-number">4</div>
+          <div class="stage-title">Booked</div>
+          <div class="stage-desc">Test scheduled at license department</div>
+        </div>
+        <div class="stage-card stage-5" id="stage5Card">
+          <div class="stage-number">5</div>
+          <div class="stage-title">Test Results & License</div>
+          <div class="stage-desc">Pass = Issue license | Fail = Return to training</div>
+        </div>
+      </div>
+
+      <div class="import-section no-print" id="importSection">
+        <h3 style="color:#4caf50;margin-bottom:10px;">📥 Import Passed Students</h3>
+        <p style="color:#666;margin-bottom:15px;">Import students who passed learner's license test from the main system</p>
+        <button class="btn-import" onclick="importPassedStudents()">Import from Learner's System</button>
+        <div id="importResult" style="margin-top:15px;font-size:0.9em;"></div>
+      </div>
+
+      <div class="branch-filter no-print">
+        <span style="font-weight:bold;color:#555;margin-right:10px;">Filter by Branch:</span>
+        <button class="branch-btn active" onclick="filterByBranch('all', this)">All Branches</button>
+        <button class="branch-btn" onclick="filterByBranch('Gold Spot', this)">Gold Spot</button>
+        <button class="branch-btn" onclick="filterByBranch('Chris Hani', this)">Chris Hani</button>
+        <button class="branch-btn" onclick="filterByBranch('Bara', this)">Bara</button>
+        <button class="branch-btn" onclick="filterByBranch('Protea Glen', this)">Protea Glen</button>
+        <button class="branch-btn" onclick="filterByBranch('Dawn Park', this)">Dawn Park</button>
+      </div>
+
+      <div class="list-section" id="stage1Section">
+        <div class="list-header">
+          <div class="list-title">📋 Stage 1: New Students - Assign to Instructor</div>
+          <span class="student-count" id="stage1Count">0 students</span>
+        </div>
+        <div class="list-body" id="stage1List"></div>
+      </div>
+
+      <div class="list-section" id="stage2Section">
+        <div class="list-header" style="border-left-color:#fd7e14;">
+          <div class="list-title">🎓 Stage 2: In Training with Instructor</div>
+          <span class="student-count" id="stage2Count">0 students</span>
+        </div>
+        <div class="list-body" id="stage2List"></div>
+      </div>
+
+      <div class="list-section" id="stage3Section">
+        <div class="list-header" style="border-left-color:#17a2b8;">
+          <div class="list-title">✅ Stage 3: Ready for Test Booking</div>
+          <span class="student-count" id="stage3Count">0 students</span>
+        </div>
+        <div class="list-body" id="stage3List"></div>
+      </div>
+
+      <div class="list-section" id="stage4Section">
+        <div class="list-header" style="border-left-color:#28a745;">
+          <div class="list-title">📅 Stage 4: Test Booked</div>
+          <span class="student-count" id="stage4Count">0 students</span>
+        </div>
+        <div class="list-body" id="stage4List"></div>
+      </div>
+
+      <div class="list-section" id="stage5Section">
+        <div class="list-header" style="border-left-color:#6f42c1;">
+          <div class="list-title">📝 Stage 5: Test Results & License Issue</div>
+          <span class="student-count" id="stage5Count">0 students</span>
+        </div>
+        <div class="list-body" id="stage5List"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="assignModal" class="modal" onclick="closeModal(event, 'assignModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>👨‍🏫 Assign Instructor</h2>
+        <span class="close" onclick="closeModal(null, 'assignModal')">&times;</span>
+      </div>
+      <input type="hidden" id="assignStudentId">
+      <div class="form-group">
+        <label>Student</label>
+        <input type="text" id="assignStudentName" readonly style="background:#e9ecef;">
+      </div>
+      <div class="form-group">
+        <label>Select Instructor *</label>
+        <select id="instructorSelect" required>
+          <option value="">Choose Instructor...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Assignment Date</label>
+        <input type="date" id="assignDate" required>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="assignNotes" placeholder="Any special requirements..."></textarea>
+      </div>
+      <div class="button-group">
+        <button class="btn-primary" onclick="saveInstructorAssignment()">Assign Instructor</button>
+        <button class="btn-secondary" onclick="closeModal(null, 'assignModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="readyModal" class="modal" onclick="closeModal(event, 'readyModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>✅ Mark Student Ready for Booking</h2>
+        <span class="close" onclick="closeModal(null, 'readyModal')">&times;</span>
+      </div>
+      <input type="hidden" id="readyStudentId">
+      <div class="form-group">
+        <label>Student</label>
+        <input type="text" id="readyStudentName" readonly style="background:#e9ecef;">
+      </div>
+      <div class="form-group">
+        <label>Instructor Approval *</label>
+        <select id="instructorApproval" required>
+          <option value="">Select...</option>
+          <option value="ready">✅ Student is ready for test</option>
+          <option value="more_training">⚠️ Needs more training</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Training Hours Completed</label>
+        <input type="number" id="trainingHours" placeholder="e.g., 20" min="0">
+      </div>
+      <div class="form-group">
+        <label>Instructor Notes *</label>
+        <textarea id="readyNotes" placeholder="Assessment notes, areas of concern, etc..." required></textarea>
+      </div>
+      <div class="button-group">
+        <button class="btn-primary" onclick="saveReadyStatus()">Confirm Status</button>
+        <button class="btn-secondary" onclick="closeModal(null, 'readyModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bookModal" class="modal" onclick="closeModal(event, 'bookModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📅 Book Driving Test</h2>
+        <span class="close" onclick="closeModal(null, 'bookModal')">&times;</span>
+      </div>
+      <input type="hidden" id="bookStudentId">
+      <div class="form-group">
+        <label>Student</label>
+        <input type="text" id="bookStudentName" readonly style="background:#e9ecef;">
+      </div>
+      <div class="form-group">
+        <label>Test Date *</label>
+        <input type="date" id="testDate" required>
+      </div>
+      <div class="form-group">
+        <label>Test Time *</label>
+        <input type="time" id="testTime" required>
+      </div>
+      <div class="form-group">
+        <label>License Department *</label>
+        <select id="testLocation" required>
+          <option value="">Select Location...</option>
+          <option value="Randburg">Randburg License Department</option>
+          <option value="Sandton">Sandton License Department</option>
+          <option value="Roodepoort">Roodepoort License Department</option>
+          <option value="Soweto">Soweto License Department</option>
+          <option value="Midrand">Midrand License Department</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Vehicle Type for Test</label>
+        <select id="testVehicle">
+          <option value="school_vehicle">School Vehicle (R300)</option>
+          <option value="own_vehicle">Own Vehicle (Free)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Additional Notes</label>
+        <textarea id="bookingNotes" placeholder="Any special arrangements..."></textarea>
+      </div>
+      <div class="button-group">
+        <button class="btn-primary" onclick="saveBooking()">Save Booking</button>
+        <button class="btn-secondary" onclick="closeModal(null, 'bookModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultModal" class="modal" onclick="closeModal(event, 'resultModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>📝 Record Test Result</h2>
+        <span class="close" onclick="closeModal(null, 'resultModal')">&times;</span>
+      </div>
+      <input type="hidden" id="resultStudentId">
+      <div class="form-group">
+        <label>Student</label>
+        <input type="text" id="resultStudentName" readonly style="background:#e9ecef;">
+      </div>
+      <div class="form-group">
+        <label>Test Result *</label>
+        <div style="display:flex;gap:15px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:15px;background:#d4edda;border-radius:8px;border:2px solid #28a745;flex:1;">
+            <input type="radio" name="driverTestResult" value="passed" style="width:20px;height:20px;">
+            <span style="font-weight:600;color:#155724;">✅ PASSED</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:15px;background:#f8d7da;border-radius:8px;border:2px solid #dc3545;flex:1;">
+            <input type="radio" name="driverTestResult" value="failed" style="width:20px;height:20px;">
+            <span style="font-weight:600;color:#721c24;">❌ FAILED</span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group" id="licenseFeeGroup" style="display:none;">
+        <label>License Issue Fee Paid *</label>
+        <select id="licenseFeePaid">
+          <option value="yes">✅ Yes - R300 paid</option>
+          <option value="no">❌ No - Balance outstanding</option>
+        </select>
+      </div>
+      <div class="form-group" id="failReasonGroup" style="display:none;">
+        <label>Failure Reason *</label>
+        <select id="failReason">
+          <option value="">Select reason...</option>
+          <option value="clutch_control">Clutch Control</option>
+          <option value="observation">Observation / Mirrors</option>
+          <option value="signaling">Signaling</option>
+          <option value="lane_discipline">Lane Discipline</option>
+          <option value="speed_control">Speed Control</option>
+          <option value="parking">Parking</option>
+          <option value="hill_start">Hill Start</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="resultNotes" placeholder="Test observations, areas to improve, etc..."></textarea>
+      </div>
+      <div class="button-group">
+        <button class="btn-primary" onclick="saveTestResult()">Save Result</button>
+        <button class="btn-secondary" onclick="closeModal(null, 'resultModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="licenseModal" class="modal" onclick="closeModal(event, 'licenseModal')">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>🪪 Issue Driver's License</h2>
+        <span class="close" onclick="closeModal(null, 'licenseModal')">&times;</span>
+      </div>
+      <input type="hidden" id="licenseStudentId">
+      <div style="background:#d4edda;padding:20px;border-radius:10px;margin-bottom:20px;text-align:center;">
+        <h3 style="color:#155724;margin-bottom:10px;">✅ Student Passed Driving Test</h3>
+        <p id="licenseStudentInfo" style="color:#333;"></p>
+      </div>
+      <div class="form-group">
+        <label>License Card Number</label>
+        <input type="text" id="licenseCardNumber" placeholder="e.g., 1234567890AB">
+      </div>
+      <div class="form-group">
+        <label>Issue Date</label>
+        <input type="date" id="licenseIssueDate" required>
+      </div>
+      <div class="form-group">
+        <label>Expiry Date</label>
+        <input type="date" id="licenseExpiryDate" required>
+      </div>
+      <div class="form-group">
+        <label>License Code</label>
+        <select id="licenseCodeFinal">
+          <option value="A">A - Motorcycles</option>
+          <option value="B">B - Light Motor Vehicles</option>
+          <option value="C1">C1 - Light Trucks</option>
+          <option value="C">C - Heavy Trucks</option>
+          <option value="EB">EB - Light Vehicle + Trailer</option>
+          <option value="EC1">EC1 - Truck + Trailer (up to 16 tons)</option>
+          <option value="EC">EC - Heavy Truck + Trailer</option>
+        </select>
+      </div>
+      <div class="button-group">
+        <button class="btn-primary" onclick="issueLicense()">Issue License & Complete</button>
+        <button class="btn-secondary" onclick="closeModal(null, 'licenseModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // YOUR WEB APP URL
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQktwxUsdUhRml7VpXPScMSDq5QaMQHt4O4TkbYPkSKiJl8-X_1Yq9c2_NeXBUUGc/exec';
+
+    const INSTRUCTORS = {
+      'Gold Spot': ['Mr. Johnson (Gold Spot)', 'Ms. Williams (Gold Spot)', 'Mr. Brown (Gold Spot)'],
+      'Chris Hani': ['Mr. Dlamini (Chris Hani)', 'Ms. Nkosi (Chris Hani)'],
+      'Bara': ['Mr. Mokoena (Bara)', 'Ms. Sithole (Bara)'],
+      'Protea Glen': ['Mr. Khumalo (Protea Glen)', 'Ms. Molefe (Protea Glen)'],
+      'Dawn Park': ['Mr. Ndlovu (Dawn Park)', 'Ms. Zulu (Dawn Park)']
+    };
+
+    const DRIVER_STAGES = {
+      1: { name: 'Instructor Assignment', color: '#6c757d', icon: '👨‍🏫' },
+      2: { name: 'In Training', color: '#fd7e14', icon: '🎓' },
+      3: { name: 'Ready for Booking', color: '#17a2b8', icon: '✅' },
+      4: { name: 'Booked for Test', color: '#28a745', icon: '📅' },
+      5: { name: 'Test Complete', color: '#6f42c1', icon: '🪪' }
+    };
+
+    let driverStudents = [];
+    let currentBranchFilter = 'all';
+    let isSyncing = false;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('assignDate').valueAsDate = new Date();
+      document.getElementById('testDate').valueAsDate = new Date();
+      document.getElementById('licenseIssueDate').valueAsDate = new Date();
+      
+      initUser();
+      loadDriverData();
+      populateInstructorSelect();
+      
+      document.querySelectorAll('input[name="driverTestResult"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+          document.getElementById('licenseFeeGroup').style.display = this.value === 'passed' ? 'block' : 'none';
+          document.getElementById('failReasonGroup').style.display = this.value === 'failed' ? 'block' : 'none';
+        });
+      });
+    });
+
+    function initUser() {
+      if (window.CURRENT_USER) {
+        const user = window.CURRENT_USER;
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userRole').textContent = user.role.toUpperCase();
+        document.getElementById('userRole').classList.add('role-' + user.role);
+        document.getElementById('userBranch').textContent = user.branch === 'all' ? 'All Branches' : user.branch;
+        
+        if (user.role === 'staff') {
+          currentBranchFilter = user.branch;
+          document.querySelector('.branch-filter').style.display = 'none';
+        }
+      }
+    }
+
+    function populateInstructorSelect() {
+      const select = document.getElementById('instructorSelect');
+      const user = window.CURRENT_USER;
+      let branches = user.branch === 'all' ? Object.keys(INSTRUCTORS) : [user.branch];
+      
+      select.innerHTML = '<option value="">Choose Instructor...</option>';
+      
+      branches.forEach(branch => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = branch;
+        INSTRUCTORS[branch].forEach(instructor => {
+          const option = document.createElement('option');
+          option.value = instructor;
+          option.textContent = instructor;
+          optgroup.appendChild(option);
+        });
+        select.appendChild(optgroup);
+      });
+    }
+
+    async function loadDriverData() {
+      updateSyncStatus('syncing', 'Loading...');
+      
+      try {
+        const stored = localStorage.getItem('mziyonkeDriverStudents');
+        if (stored) {
+          driverStudents = JSON.parse(stored);
+          renderAllStages();
+        }
+        
+        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getDrivers');
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          driverStudents = data.map(row => ({
+            id: row.id || Date.now().toString(36),
+            firstName: row.firstName || '',
+            lastName: row.lastName || '',
+            idNumber: row.idNumber || '',
+            phone: row.phone || '',
+            email: row.email || '',
+            salesRep: row.salesRep || '',
+            branch: row.branch || 'Gold Spot',
+            licenseCode: row.licenseCode || 'Code 8',
+            currentStage: parseInt(row.currentStage) || 1,
+            instructor: row.instructor || null,
+            assignDate: row.assignDate || null,
+            assignNotes: row.assignNotes || '',
+            trainingHours: row.trainingHours || 0,
+            readyNotes: row.readyNotes || '',
+            testDate: row.testDate || null,
+            testTime: row.testTime || null,
+            testLocation: row.testLocation || null,
+            testVehicle: row.testVehicle || 'school_vehicle',
+            bookingNotes: row.bookingNotes || '',
+            testResult: row.testResult || null,
+            failReason: row.failReason || null,
+            licenseFeePaid: row.licenseFeePaid || null,
+            licenseCardNumber: row.licenseCardNumber || null,
+            licenseIssueDate: row.licenseIssueDate || null,
+            licenseExpiryDate: row.licenseExpiryDate || null,
+            licenseCodeFinal: row.licenseCodeFinal || null,
+            dateAdded: row.dateAdded || new Date().toLocaleString()
+          }));
+          
+          localStorage.setItem('mziyonkeDriverStudents', JSON.stringify(driverStudents));
+          renderAllStages();
+          updateSyncStatus('synced', `☁️ ${driverStudents.length} students`);
+        } else {
+          updateSyncStatus('local', 'Local data');
+        }
+      } catch (error) {
+        console.error('Load failed:', error);
+        updateSyncStatus('error', 'Sync failed');
+      }
+    }
+
+    async function saveDriverData() {
+      if (isSyncing) return;
+      isSyncing = true;
+      updateSyncStatus('syncing', 'Saving...');
+      
+      try {
+        localStorage.setItem('mziyonkeDriverStudents', JSON.stringify(driverStudents));
+        
+        for (const student of driverStudents) {
+          await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: 'action=saveDriver&data=' + encodeURIComponent(JSON.stringify(student)),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          });
+        }
+        
+        updateSyncStatus('synced', `☁️ Saved ${driverStudents.length}`);
+        renderAllStages();
+      } catch (error) {
+        console.error('Save failed:', error);
+        updateSyncStatus('error', 'Save failed');
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    function updateSyncStatus(status, text) {
+      const el = document.getElementById('syncStatus');
+      const icon = document.getElementById('syncIcon');
+      const txt = document.getElementById('syncText');
+      
+      el.style.display = 'inline-flex';
+      el.className = 'sync-status ' + status;
+      
+      if (status === 'syncing') icon.textContent = '🔄';
+      else if (status === 'synced') icon.textContent = '☁️';
+      else if (status === 'error') icon.textContent = '⚠️';
+      else if (status === 'local') icon.textContent = '💻';
+      
+      txt.textContent = text;
+    }
+
+    function syncData() {
+      loadDriverData();
+    }
+
+    async function importPassedStudents() {
+      const resultDiv = document.getElementById('importResult');
+      resultDiv.innerHTML = '<p style="color:#2196f3;">⏳ Importing passed students...</p>';
+      
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getPassed');
+        const passedStudents = await response.json();
+        
+        if (!passedStudents || passedStudents.length === 0) {
+          resultDiv.innerHTML = '<p style="color:#ff9800;">⚠️ No passed students found in learner\'s system</p>';
+          return;
+        }
+        
+        let imported = 0;
+        let skipped = 0;
+        
+        passedStudents.forEach(learner => {
+          const exists = driverStudents.find(d => d.idNumber === learner.idNumber);
+          if (exists) {
+            skipped++;
+            return;
+          }
+          
+          const driverStudent = {
+            id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+            firstName: learner.firstName,
+            lastName: learner.lastName,
+            idNumber: learner.idNumber,
+            phone: learner.phone,
+            email: learner.email || '',
+            salesRep: learner.salesRep || '',
+            branch: learner.branch,
+            licenseCode: learner.licenseCode,
+            currentStage: 1,
+            instructor: null,
+            dateAdded: new Date().toLocaleString(),
+            source: 'Imported from Learner\'s System'
+          };
+          
+          driverStudents.push(driverStudent);
+          imported++;
+        });
+        
+        saveDriverData();
+        
+        resultDiv.innerHTML = `
+          <p style="color:#4caf50;">
+            ✅ Import complete!<br>
+            <strong>${imported}</strong> students imported<br>
+            <strong>${skipped}</strong> already existed (skipped)
+          </p>
+        `;
+        
+        setTimeout(() => resultDiv.innerHTML = '', 5000);
+        
+      } catch (error) {
+        console.error('Import failed:', error);
+        resultDiv.innerHTML = '<p style="color:#f44336;">❌ Import failed. Check console for details.</p>';
+      }
+    }
+
+    function renderAllStages() {
+      let filtered = driverStudents;
+      if (currentBranchFilter !== 'all') {
+        filtered = driverStudents.filter(s => s.branch === currentBranchFilter);
+      }
+      
+      const counts = {
+        1: filtered.filter(s => s.currentStage === 1).length,
+        2: filtered.filter(s => s.currentStage === 2).length,
+        3: filtered.filter(s => s.currentStage === 3).length,
+        4: filtered.filter(s => s.currentStage === 4).length,
+        5: filtered.filter(s => s.currentStage === 5).length
+      };
+      
+      document.getElementById('stage1Count').textContent = counts[1] + ' students';
+      document.getElementById('stage2Count').textContent = counts[2] + ' students';
+      document.getElementById('stage3Count').textContent = counts[3] + ' students';
+      document.getElementById('stage4Count').textContent = counts[4] + ' students';
+      document.getElementById('stage5Count').textContent = counts[5] + ' students';
+      
+      renderStage1(filtered.filter(s => s.currentStage === 1));
+      renderStage2(filtered.filter(s => s.currentStage === 2));
+      renderStage3(filtered.filter(s => s.currentStage === 3));
+      renderStage4(filtered.filter(s => s.currentStage === 4));
+      renderStage5(filtered.filter(s => s.currentStage === 5));
+    }
+
+    function renderStage1(students) {
+      const container = document.getElementById('stage1List');
+      if (students.length === 0) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:#666;">No students awaiting instructor assignment. Import from learner\'s system or wait for new passes.</div>';
+        return;
+      }
+      
+      container.innerHTML = students.map(s => `
+        <div class="student-row">
+          <div class="student-info">
+            <div class="student-name">${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)}</div>
+            <div class="student-details">
+              📱 ${escapeHtml(s.phone)} | 🆔 ${escapeHtml(s.idNumber)} | 📍 ${escapeHtml(s.branch)} | 
+              🚗 ${escapeHtml(s.licenseCode)} | 📅 Imported: ${s.dateAdded}
+            </div>
+          </div>
+          <div class="student-actions">
+            <button class="btn-action btn-ready" onclick="openAssignModal('${s.id}')">👨‍🏫 Assign Instructor</button>
+            <button class="btn-action btn-whatsapp" onclick="openWhatsApp('${encodeURIComponent(s.phone)}', '${encodeURIComponent(s.firstName)}', '0', '1', '${encodeURIComponent(s.licenseCode)}')">💬 WhatsApp</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderStage2(students) {
+      const container = document.getElementById('stage2List');
+      if (students.length === 0) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:#666;">No students currently in training.</div>';
+        return;
+      }
+      
+      container.innerHTML = students.map(s => `
+        <div class="student-row">
+          <div class="student-info">
+            <div class="student-name">${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)}</div>
+            <div class="student-details">
+              📱 ${escapeHtml(s.phone)} | 👨‍🏫 ${escapeHtml(s.instructor)} | 
+              ⏱️ ${s.trainingHours || 0} hours | 📅 Assigned: ${s.assignDate || 'N/A'}
+            </div>
+            ${s.assignNotes ? `<div style="font-size:0.8em;color:#666;margin-top:5px;font-style:italic;">📝 ${escapeHtml(s.assignNotes)}</div>` : ''}
+          </div>
+          <div class="student-actions">
+            <button class="btn-action btn-book" onclick="openReadyModal('${s.id}')">✅ Mark Ready/Needs More Training</button>
+            <button class="btn-action btn-whatsapp" onclick="openWhatsApp('${encodeURIComponent(s.phone)}', '${encodeURIComponent(s.firstName)}', '0', '2', '${encodeURIComponent(s.licenseCode)}')">💬 WhatsApp</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderStage3(students) {
+      const container = document.getElementById('stage3List');
+      if (students.length === 0) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:#666;">No students ready for test booking.</div>';
+        return;
+      }
+      
+      container.innerHTML = students.map(s => `
+        <div class="student-row">
+          <div class="student-info">
+            <div class="student-name">${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)}</div>
+            <div class="student-details">
+              📱 ${escapeHtml(s.phone)} | 👨‍🏫 ${escapeHtml(s.instructor)} | 
+              ⏱️ ${s.trainingHours || 0} hours completed
+            </div>
+            ${s.readyNotes ? `<div style="font-size:0.8em;color:#28a745;margin-top:5px;font-weight:600;">✅ ${escapeHtml(s.readyNotes)}</div>` : ''}
+          </div>
+          <div class="student-actions">
+            <button class="btn-action btn-book" onclick="openBookModal('${s.id}')">📅 Book Test</button>
+            <button class="btn-action btn-whatsapp" onclick="openWhatsApp('${encodeURIComponent(s.phone)}', '${encodeURIComponent(s.firstName)}', '0', '3', '${encodeURIComponent(s.licenseCode)}')">💬 WhatsApp</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderStage4(students) {
+      const container = document.getElementById('stage4List');
+      if (students.length === 0) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:#666;">No booked tests.</div>';
+        return;
+      }
+      
+      container.innerHTML = students.map(s => `
+        <div class="student-row">
+          <div class="student-info">
+            <div class="student-name">${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)}</div>
+            <div class="student-details">
+              📱 ${escapeHtml(s.phone)} | 🚗 ${escapeHtml(s.testVehicle === 'school_vehicle' ? 'School Vehicle' : 'Own Vehicle')}
+            </div>
+            <div class="booking-info">
+              <strong>📅 ${s.testDate} at ${s.testTime}</strong><br>
+              📍 ${escapeHtml(s.testLocation)}<br>
+              ${s.bookingNotes ? `<small>📝 ${escapeHtml(s.bookingNotes)}</small>` : ''}
+            </div>
+          </div>
+          <div class="student-actions">
+            <button class="btn-action btn-result" onclick="openResultModal('${s.id}')">📝 Record Result</button>
+            <button class="btn-action btn-whatsapp" onclick="sendTestReminder('${encodeURIComponent(s.phone)}', '${encodeURIComponent(s.firstName)}', '${encodeURIComponent(s.testDate)}', '${encodeURIComponent(s.testTime)}', '${encodeURIComponent(s.testLocation)}')">📢 Reminder</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderStage5(students) {
+      const container = document.getElementById('stage5List');
+      if (students.length === 0) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:#666;">No completed tests.</div>';
+        return;
+      }
+      
+      container.innerHTML = students.map(s => {
+        if (s.testResult === 'passed') {
+          return `
+            <div class="student-row" style="background:#d4edda;">
+              <div class="student-info">
+                <div class="student-name">✅ ${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)} - PASSED</div>
+                <div class="student-details">
+                  📱 ${escapeHtml(s.phone)} | 🆔 ${escapeHtml(s.idNumber)}
+                </div>
+                ${s.licenseCardNumber ? `
+                  <div style="background:#28a745;color:white;padding:8px 12px;border-radius:5px;margin-top:8px;display:inline-block;">
+                    🪪 License Issued: ${escapeHtml(s.licenseCardNumber)}<br>
+                    <small>Valid: ${s.licenseIssueDate} to ${s.licenseExpiryDate}</small>
+                  </div>
+                ` : `
+                  <div style="background:#ffc107;color:#333;padding:8px 12px;border-radius:5px;margin-top:8px;display:inline-block;">
+                    ⏳ Awaiting License Issue - Fee: ${s.licenseFeePaid === 'yes' ? '✅ Paid' : '❌ Outstanding'}
+                  </div>
+                `}
+              </div>
+              <div class="student-actions">
+                ${!s.licenseCardNumber ? `<button class="btn-action btn-complete" onclick="openLicenseModal('${s.id}')">🪪 Issue License</button>` : ''}
+                <button class="btn-action btn-whatsapp" onclick="openWhatsApp('${encodeURIComponent(s.phone)}', '${encodeURIComponent(s.firstName)}', '0', '5', '${encodeURIComponent(s.licenseCode)}')">💬 Message</button>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="student-row" style="background:#f8d7da;">
+              <div class="student-info">
+                <div class="student-name">❌ ${escapeHtml(s.firstName)} ${escapeHtml(s.lastName)} - FAILED</div>
+                <div class="student-details">
+                  📱 ${escapeHtml(s.phone)} | 🆔 ${escapeHtml(s.idNumber)}
+                </div>
+                <div style="color:#dc3545;font-size:0.85em;margin-top:5px;">
+                  <strong>Reason:</strong> ${escapeHtml(s.failReason || 'Not specified')}<br>
+                  📝 ${escapeHtml(s.resultNotes || '')}
+                </div>
+              </div>
+              <div class="student-actions">
+                <button class="btn-action btn-ready" onclick="returnToTraining('${s.id}')">🔄 Return to Training (Stage 2)</button>
+                <button class="btn-action btn-whatsapp" onclick="openWhatsApp('${encodeURIComponent(s.phone)}', '${encodeURIComponent(s.firstName)}', '0', '5', '${encodeURIComponent(s.licenseCode)}')">💬 Message</button>
+              </div>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    function openModal(modalId) {
+      document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function closeModal(event, modalId) {
+      if (!event || event.target.id === modalId) {
+        document.getElementById(modalId).style.display = 'none';
+      }
+    }
+
+    function openAssignModal(studentId) {
+      const student = driverStudents.find(s => s.id === studentId);
+      if (!student) return;
+      
+      document.getElementById('assignStudentId').value = studentId;
+      document.getElementById('assignStudentName').value = student.firstName + ' ' + student.lastName;
+      document.getElementById('assignDate').valueAsDate = new Date();
+      document.getElementById('assignNotes').value = '';
+      
+      openModal('assignModal');
+    }
+
+    function openReadyModal(studentId) {
+      const student = driverStudents.find(s => s.id === studentId);
+      if (!student) return;
+      
+      document.getElementById('readyStudentId').value = studentId;
+      document.getElementById('readyStudentName').value = student.firstName + ' ' + student.lastName;
+      document.getElementById('trainingHours').value = student.trainingHours || '';
+      document.getElementById('readyNotes').value = '';
+      document.getElementById('instructorApproval').value = '';
+      
+      openModal('readyModal');
+    }
+
+    function openBookModal(studentId) {
+      const student = driverStudents.find(s => s.id === studentId);
+      if (!student) return;
+      
+      document.getElementById('bookStudentId').value = studentId;
+      document.getElementById('bookStudentName').value = student.firstName + ' ' + student.lastName;
+      document.getElementById('testDate').valueAsDate = new Date();
+      document.getElementById('testTime').value = '08:00';
+      document.getElementById('testLocation').value = '';
+      document.getElementById('testVehicle').value = 'school_vehicle';
+      document.getElementById('bookingNotes').value = '';
+      
+      openModal('bookModal');
+    }
+
+    function openResultModal(studentId) {
+      const student = driverStudents.find(s => s.id === studentId);
+      if (!student) return;
+      
+      document.getElementById('resultStudentId').value = studentId;
+      document.getElementById('resultStudentName').value = student.firstName + ' ' + student.lastName;
+      document.querySelectorAll('input[name="driverTestResult"]').forEach(r => r.checked = false);
+      document.getElementById('licenseFeePaid').value = 'yes';
+      document.getElementById('failReason').value = '';
+      document.getElementById('resultNotes').value = '';
+      document.getElementById('licenseFeeGroup').style.display = 'none';
+      document.getElementById('failReasonGroup').style.display = 'none';
+      
+      openModal('resultModal');
+    }
+
+    function openLicenseModal(studentId) {
+      const student = driverStudents.find(s => s.id === studentId);
+      if (!student) return;
+      
+      document.getElementById('licenseStudentId').value = studentId;
+      document.getElementById('licenseStudentInfo').innerHTML = `
+        <strong>${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}</strong><br>
+        ID: ${escapeHtml(student.idNumber)} | Code: ${escapeHtml(student.licenseCode)}
+      `;
+      document.getElementById('licenseCardNumber').value = '';
+      document.getElementById('licenseIssueDate').valueAsDate = new Date();
+      
+      const expiry = new Date();
+      expiry.setFullYear(expiry.getFullYear() + 5);
+      document.getElementById('licenseExpiryDate').valueAsDate = expiry;
+      
+      const codeMap = { 'Code 8': 'B', 'Code 10': 'C1', 'Code 14': 'EC' };
+      document.getElementById('licenseCodeFinal').value = codeMap[student.licenseCode] || 'B';
+      
+      openModal('licenseModal');
+    }
+
+    function saveInstructorAssignment() {
+      const studentId = document.getElementById('assignStudentId').value;
+      const instructor = document.getElementById('instructorSelect').value;
+      const date = document.getElementById('assignDate').value;
+      const notes = document.getElementById('assignNotes').value;
+      
+      if (!instructor || !date) {
+        alert('Please select an instructor and date');
+        return;
+      }
+      
+      const student = driverStudents.find(s => s.id === studentId);
+      if (student) {
+        student.instructor = instructor;
+        student.assignDate = date;
+        student.assignNotes = notes;
+        student.currentStage = 2;
+        
+        saveDriverData();
+        closeModal(null, 'assignModal');
+        showNotification(`✅ Assigned to ${instructor}`);
+      }
+    }
+
+    function saveReadyStatus() {
+      const studentId = document.getElementById('readyStudentId').value;
+      const approval = document.getElementById('instructorApproval').value;
+      const hours = document.getElementById('trainingHours').value;
+      const notes = document.getElementById('readyNotes').value;
+      
+      if (!approval) {
+        alert('Please select approval status');
+        return;
+      }
+      
+      const student = driverStudents.find(s => s.id === studentId);
+      if (!student) return;
+      
+      student.trainingHours = hours;
+      
+      if (approval === 'ready') {
+        if (!notes) {
+          alert('Please add assessment notes');
+          return;
+        }
+        student.readyNotes = notes;
+        student.currentStage = 3;
+        saveDriverData();
+        closeModal(null, 'readyModal');
+        showNotification('✅ Student marked ready for test booking');
+      } else {
+        student.readyNotes = 'Needs more training: ' + notes;
+        saveDriverData();
+        closeModal(null, 'readyModal');
+        showNotification('⚠️ Student stays in training');
+      }
+    }
+
+    function saveBooking() {
+      const studentId = document.getElementById('bookStudentId').value;
+      const testDate = document.getElementById('testDate').value;
+      const testTime = document.getElementById('testTime').value;
+      const location = document.getElementById('testLocation').value;
+      const vehicle = document.getElementById('testVehicle').value;
+      const notes = document.getElementById('bookingNotes').value;
+      
+      if (!testDate || !testTime || !location) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      
+      const student = driverStudents.find(s => s.id === studentId);
+      if (student) {
+        student.testDate = testDate;
+        student.testTime = testTime;
+        student.testLocation = location;
+        student.testVehicle = vehicle;
+        student.bookingNotes = notes;
+        student.currentStage = 4;
+        
+        saveDriverData();
+        closeModal(null, 'bookModal');
+        sendBookingConfirmation(student.phone, student.firstName, testDate, testTime, location);
+        showNotification('✅ Test booked and student notified');
+      }
+    }
+
+    function saveTestResult() {
+      const studentId = document.getElementById('resultStudentId').value;
+      const result = document.querySelector('input[name="driverTestResult"]:checked');
+      
+      if (!result) {
+        alert('Please select test result');
+        return;
+      }
+      
+      const student = driverStudents.find(s => s.id === studentId);
+      if (!student) return;
+      
+      student.testResult = result.value;
+      student.resultNotes = document.getElementById('resultNotes').value;
+      
+      if (result.value === 'passed') {
+        student.licenseFeePaid = document.getElementById('licenseFeePaid').value;
+        student.currentStage = 5;
+        
+        saveDriverData();
+        closeModal(null, 'resultModal');
+        
+        if (student.licenseFeePaid === 'yes') {
+          openLicenseModal(studentId);
+        } else {
+          showNotification('✅ Student passed! License fee outstanding');
+        }
+      } else {
+        student.failReason = document.getElementById('failReason').value;
+        student.currentStage = 5;
+        
+        saveDriverData();
+        closeModal(null, 'resultModal');
+        showNotification('❌ Student failed. Return to training available.');
+      }
+    }
+
+    function issueLicense() {
+      const studentId = document.getElementById('licenseStudentId').value;
+      const cardNumber = document.getElementById('licenseCardNumber').value;
+      const issueDate = document.getElementById('licenseIssueDate').value;
+      const expiryDate = document.getElementById('licenseExpiryDate').value;
+      const code = document.getElementById('licenseCodeFinal').value;
+      
+      if (!issueDate || !expiryDate) {
+        alert('Please fill in all dates');
+        return;
+      }
+      
+      const student = driverStudents.find(s => s.id === studentId);
+      if (student) {
+        student.licenseCardNumber = cardNumber;
+        student.licenseIssueDate = issueDate;
+        student.licenseExpiryDate = expiryDate;
+        student.licenseCodeFinal = code;
+        
+        saveDriverData();
+        closeModal(null, 'licenseModal');
+        sendLicenseIssuedMessage(student.phone, student.firstName, cardNumber, expiryDate);
+        showNotification('🪪 Driver\'s license issued! Student completed.');
+      }
+    }
+
+    function returnToTraining(studentId) {
+      const student = driverStudents.find(s => s.id === studentId);
+      if (student && confirm(`Return ${student.firstName} ${student.lastName} to training (Stage 2)?`)) {
+        student.currentStage = 2;
+        student.testResult = null;
+        student.failReason = null;
+        student.testDate = null;
+        student.testTime = null;
+        student.testLocation = null;
+        
+        saveDriverData();
+        showNotification('🔄 Student returned to training');
+      }
+    }
+
+    function openWhatsApp(phone, firstName, balance, stage, licenseCode) {
+      try {
+        phone = decodeURIComponent(phone);
+        firstName = decodeURIComponent(firstName);
+        
+        let cleanPhone = phone.replace(/\s+/g, '');
+        if (cleanPhone.startsWith('0')) cleanPhone = '27' + cleanPhone.substring(1);
+        else if (!cleanPhone.startsWith('27')) cleanPhone = '27' + cleanPhone;
+        cleanPhone = cleanPhone.replace('+', '');
+        
+        const stageNames = {
+          1: 'Instructor Assignment',
+          2: 'Practical Training',
+          3: 'Ready for Test Booking',
+          4: 'Test Booked',
+          5: 'Test Complete'
+        };
+        
+        let message = `Hi ${firstName}, Mziyonke Driving School here! 👋\n\n`;
+        message += `Your driver's license progress: *${stageNames[stage] || 'Instructor Assignment'}*\n\n`;
+        message += `How is your practical training going? Please confirm your availability for lessons.\n\n`;
+        message += `Thank you! 🚗`;
+        
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+      } catch (error) {
+        alert('Error opening WhatsApp: ' + error.message);
+      }
+    }
+
+    function sendBookingConfirmation(phone, firstName, date, time, location) {
+      try {
+        phone = decodeURIComponent(phone);
+        firstName = decodeURIComponent(firstName);
+        date = decodeURIComponent(date);
+        time = decodeURIComponent(time);
+        location = decodeURIComponent(location);
+        
+        let cleanPhone = phone.replace(/\s+/g, '');
+        if (cleanPhone.startsWith('0')) cleanPhone = '27' + cleanPhone.substring(1);
+        else if (!cleanPhone.startsWith('27')) cleanPhone = '27' + cleanPhone;
+        cleanPhone = cleanPhone.replace('+', '');
+        
+        const message = `Hi ${firstName}, your driving test is BOOKED! 🎉\n\n` +
+          `📅 Date: ${date}\n` +
+          `⏰ Time: ${time}\n` +
+          `📍 Location: ${location}\n\n` +
+          `Please arrive 30 minutes early with:\n` +
+          `✓ Your learner's license\n` +
+          `✓ ID document\n` +
+          `✓ Booking fee receipt\n\n` +
+          `Good luck! 🚗💨`;
+        
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+      } catch (e) {}
+    }
+
+    function sendTestReminder(phone, firstName, date, time, location) {
+      try {
+        phone = decodeURIComponent(phone);
+        firstName = decodeURIComponent(firstName);
+        date = decodeURIComponent(date);
+        time = decodeURIComponent(time);
+        location = decodeURIComponent(location);
+        
+        let cleanPhone = phone.replace(/\s+/g, '');
+        if (cleanPhone.startsWith('0')) cleanPhone = '27' + cleanPhone.substring(1);
+        else if (!cleanPhone.startsWith('27')) cleanPhone = '27' + cleanPhone;
+        cleanPhone = cleanPhone.replace('+', '');
+        
+        const message = `REMINDER: ${firstName}, your driving test is tomorrow! 🚨\n\n` +
+          `📅 ${date} at ${time}\n` +
+          `📍 ${location}\n\n` +
+          `Don't forget your learner's license and ID! You've got this! 💪🚗`;
+        
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+      } catch (e) {}
+    }
+
+    function sendLicenseIssuedMessage(phone, firstName, cardNumber, expiry) {
+      try {
+        let cleanPhone = phone.replace(/\s+/g, '');
+        if (cleanPhone.startsWith('0')) cleanPhone = '27' + cleanPhone.substring(1);
+        else if (!cleanPhone.startsWith('27')) cleanPhone = '27' + cleanPhone;
+        cleanPhone = cleanPhone.replace('+', '');
+        
+        const message = `🎉 CONGRATULATIONS ${firstName}! 🎉\n\n` +
+          `Your driver's license has been ISSUED! 🪪\n` +
+          `Card Number: ${cardNumber || 'N/A'}\n` +
+          `Valid until: ${expiry}\n\n` +
+          `You can now legally drive! Stay safe on the roads! 🚗\n\n` +
+          `Thank you for choosing Mziyonke Driving School! 🙏`;
+        
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+      } catch (e) {}
+    }
+
+    function filterByBranch(branch, btn) {
+      currentBranchFilter = branch;
+      document.querySelectorAll('.branch-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderAllStages();
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function showNotification(msg) {
+      const notif = document.createElement('div');
+      notif.style.cssText = `
+        position:fixed;top:20px;right:20px;background:#28a745;color:white;
+        padding:15px 25px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,.2);
+        z-index:2000;font-weight:bold;max-width:400px;
+      `;
+      notif.textContent = msg;
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 4000);
+    }
+
+    function logout() {
+      if (confirm('Logout?')) {
+        localStorage.removeItem('mziyonkeSession');
+        window.location.href = 'index.html';
+      }
+    }
+
+    window.onclick = function(event) {
+      if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+      }
+    };
+  </script>
+</body>
+</html>
